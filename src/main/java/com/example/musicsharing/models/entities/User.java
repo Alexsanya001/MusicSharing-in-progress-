@@ -26,11 +26,17 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
     private long id;
+
     private String username;
+
     private String password;
+
     private String email;
+
     private String firstName;
+
     private String lastName;
+
     @Enumerated(EnumType.STRING)
     private Role role;
 }
