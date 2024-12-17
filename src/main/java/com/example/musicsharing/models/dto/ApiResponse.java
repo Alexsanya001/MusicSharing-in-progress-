@@ -1,4 +1,4 @@
-package com.example.musicsharing.controllers;
+package com.example.musicsharing.models.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -2,11 +2,9 @@ package com.example.musicsharing.controllers;
 
 import com.example.musicsharing.models.dto.RegisterDTO;
 import com.example.musicsharing.services.UserService;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,7 +22,7 @@ public class AuthController {
 
     @PostMapping
     public ResponseEntity<String> register
-            (@RequestBody RegisterDTO registerDTO) {
+            (@Valid @RequestBody RegisterDTO registerDTO) {
 
         long id = userService.createUser(registerDTO);
         URI location;
