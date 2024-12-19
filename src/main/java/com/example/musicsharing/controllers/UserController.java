@@ -30,6 +30,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<UserInfoDTO>>> getAllUsers() {

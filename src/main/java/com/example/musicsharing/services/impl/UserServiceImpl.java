@@ -49,13 +49,13 @@ public class UserServiceImpl implements UserService {
 
         String username = loginDTO.getUsername();
         User user = findByUsername(username);
-        long userId = user.getId();
+        String userId = Long.toString(user.getId());
         Map<String, String> claims = new HashMap<>();
 
         claims.put("username", username);
         claims.put("role", user.getRole().name());
 
-        return jwtUtil.generateToken(Long.toString(userId), claims, tokenExpTime);
+        return jwtUtil.generateToken(userId, claims, tokenExpTime);
     }
 
 

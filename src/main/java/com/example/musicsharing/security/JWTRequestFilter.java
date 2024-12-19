@@ -1,6 +1,9 @@
 package com.example.musicsharing.security;
 
 import com.example.musicsharing.util.JWTUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +17,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -28,20 +33,46 @@ public class JWTRequestFilter extends OncePerRequestFilter {
         String jwtToken = null;
 
         if (header != null && header.startsWith("Bearer ")) {
+
             jwtToken = header.substring(7);
-            username = jwtUtil.extractClaim("username", jwtToken);
-        }
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            String role = jwtUtil.extractClaim("role", jwtToken);
-            UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
-                    username,
-                    null,
-                    Collections.singleton(new SimpleGrantedAuthority(role))
-            );
+            try {
+                username = jwtUtil.extractClaim("username", jwtToken);
+                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    String role = jwtUtil.extractClaim("role", jwtToken);
+                    UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+                            username,
+                            null,
+                            Collections.singleton(new SimpleGrantedAuthority(role))
+                    );
 
-            SecurityContextHolder.getContext().setAuthentication(token);
+                    SecurityContextHolder.getContext().setAuthentication(token);
+                }
+                filterChain.doFilter(request, response);
+
+            } catch (JwtException ex) {
+                handleJwtException(response, ex);
+            }
         }
-        filterChain.doFilter(request, response);
     }
+
+
+    private void handleJwtException(HttpServletResponse response, JwtException ex) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        Map<String, String> responseBody = new HashMap<>();
+        String message;
+
+        if (ex instanceof ExpiredJwtException) {
+            message = "Authorization expired. Please login again.";
+        }else {
+            message = "Authorization failed";
+        }
+        responseBody.put("message", message);
+
+        response.getWriter().write(new ObjectMapper().writeValueAsString(responseBody));
+    }
+
 }

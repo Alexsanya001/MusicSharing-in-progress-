@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -31,20 +31,18 @@ public class AuthController {
             (@Valid @RequestBody RegisterDTO registerDTO) {
 
         long id = userService.createUser(registerDTO);
-        URI location;
 
-        try {
-            location = new URI("/api/users/" + id);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
+        URI location = UriComponentsBuilder
+                .fromPath("/api/users/{id}")
+                .buildAndExpand(id)
+                .toUri();
 
         return ResponseEntity.created(location).build();
     }
 
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<?>> login(@RequestBody LoginDTO loginDTO) {
+    public ResponseEntity<ApiResponse<String>> login(@RequestBody LoginDTO loginDTO) {
 
         authManager.authenticate(new UsernamePasswordAuthenticationToken(
                 loginDTO.getUsername(), loginDTO.getPassword()));
