@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -71,10 +72,17 @@ public class UserServiceImpl implements UserService {
         );
     }
 
+
     @Override
     public UserInfoDTO showUser(String username) {
         User user = findByUsername(username);
         return userMapper.toUserInfoDTO(user);
+    }
+
+
+    @Override
+    public List<UserInfoDTO> getAllUsers() {
+        return userMapper.toUserInfoDTOList(userRepository.findAll());
     }
 
 
