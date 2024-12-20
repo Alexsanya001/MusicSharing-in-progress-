@@ -9,7 +9,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -29,8 +31,8 @@ public class JWTRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
         String header = request.getHeader("Authorization");
-        String username = null;
-        String jwtToken = null;
+        String username;
+        String jwtToken;
 
         if (header != null && header.startsWith("Bearer ")) {
 
@@ -48,12 +50,12 @@ public class JWTRequestFilter extends OncePerRequestFilter {
 
                     SecurityContextHolder.getContext().setAuthentication(token);
                 }
-                filterChain.doFilter(request, response);
-
             } catch (JwtException ex) {
                 handleJwtException(response, ex);
+                return;
             }
         }
+        filterChain.doFilter(request, response);
     }
 
 
@@ -67,7 +69,7 @@ public class JWTRequestFilter extends OncePerRequestFilter {
 
         if (ex instanceof ExpiredJwtException) {
             message = "Authorization expired. Please login again.";
-        }else {
+        } else {
             message = "Authorization failed";
         }
         responseBody.put("message", message);
