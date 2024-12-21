@@ -5,8 +5,10 @@ services:
     image: postgres:alpine
     environment:
       POSTGRES_USER: ${PG_USER}
-      POSTGRES_PASSWORD: ${PG_PASS}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
       POSTGRES_DB: db-music
+    env_file:
+      - ../.env
 
     ports:
       - "5433:5432"
