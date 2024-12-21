@@ -65,7 +65,8 @@ class AuthControllerTest {
                 .thenReturn(false);
         when(userRepository.existsByEmail(registerDTO.getEmail()))
                 .thenReturn(false);
-        when(userService.createUser(any(RegisterDTO.class))).thenReturn(userId);
+        when(userService.createUser(any(RegisterDTO.class)))
+                .thenReturn(userId);
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -88,8 +89,8 @@ class AuthControllerTest {
         String requestBody = objectMapper.writeValueAsString(registerDTO);
 
         mockMvc.perform(post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors").isArray())
                 .andExpect(jsonPath("$.errors.size()").value(5));
@@ -114,10 +115,11 @@ class AuthControllerTest {
         when(userService.createTokenOnLogin(any(LoginDTO.class))).thenReturn(token);
 
         mockMvc.perform(post("/api/auth/login")
-        .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isOk())
-                .andExpect(content().json(expectedJson));
+                .andExpect(content().json(expectedJson))
+                .andExpect(jsonPath("$.errors").isEmpty());
 
     }
 }
