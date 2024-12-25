@@ -22,6 +22,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +30,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -58,7 +60,7 @@ class UserServiceTest {
     @Captor
     private ArgumentCaptor<Map<String, String>> claimsCaptor;
     @Captor
-    private ArgumentCaptor<Long> timeCaptor;
+    private ArgumentCaptor<Duration> timeCaptor;
 
 
     @BeforeEach
@@ -111,10 +113,10 @@ class UserServiceTest {
 
         when(userRepository.findByUsername(loginDTO.getUsername()))
                 .thenReturn(Optional.of(user));
-        when(jwtUtil.generateToken(anyString(), anyMap(), anyLong()))
+        when(jwtUtil.generateToken(anyString(), anyMap(), any(Duration.class)))
                 .thenReturn(token);
 
-        ReflectionTestUtils.setField(userServiceImpl, "tokenExpTime", 60000);
+        ReflectionTestUtils.setField(userServiceImpl, "tokenExpTime", Duration.ofMinutes(1));
 
         String result = userService.createTokenOnLogin(loginDTO);
 
@@ -125,7 +127,7 @@ class UserServiceTest {
         assertEquals(idCaptor.getValue(), String.valueOf(user.getId()));
         assertEquals(claims.get("username"), user.getUsername());
         assertEquals(claims.get("role"), Role.ROLE_USER.toString());
-        assertEquals(60000, (long) timeCaptor.getValue());
+        assertEquals(Duration.ofMinutes(1L), timeCaptor.getValue());
     }
 
     @Test

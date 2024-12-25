@@ -17,6 +17,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Map;
+
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -94,6 +97,36 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors").isArray())
                 .andExpect(jsonPath("$.errors.size()").value(5));
+
+        verify(userService, never()).createUser(any());
+    }
+
+    @Test
+    void register_returnsFailure_whenUserOrEmailExists() throws Exception {
+        RegisterDTO registerDTO = RegisterDTO.builder()
+                .username("existent")
+                .password("Password123")
+                .email("existent@email.com")
+                .firstName("John")
+                .lastName("Doe")
+                .build();
+
+        String requestBody = objectMapper.writeValueAsString(registerDTO);
+
+        when(userRepository.existsByUsername(registerDTO.getUsername().toLowerCase()))
+                .thenReturn(true);
+        when(userRepository.existsByEmail(registerDTO.getEmail().toLowerCase()))
+                .thenReturn(true);
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").isArray())
+                .andExpect(jsonPath("$.errors", containsInAnyOrder(
+                        Map.of("field", "username", "message", "Username already taken."),
+                        Map.of("field", "email", "message", "Email already in use.")
+                )));
 
         verify(userService, never()).createUser(any());
     }

@@ -15,7 +15,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.security.Principal;
-import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.Mockito.when;

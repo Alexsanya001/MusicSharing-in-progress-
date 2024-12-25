@@ -21,6 +21,7 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/info")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<UserInfoDTO>> showUserInfo(Principal principal) {
 
         UserInfoDTO user = userService.showUser(principal.getName());

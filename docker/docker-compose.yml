@@ -2,17 +2,13 @@ version: '3.8'
 
 services:
   db:
+    container_name: pg_db
     image: postgres:alpine
-    environment:
-      POSTGRES_USER: ${PG_USER}
-      POSTGRES_PASSWORD: ${PG_PASSWORD}
-      POSTGRES_DB: db-music
+    restart: unless-stopped
     env_file:
-      - ../.env
-
+    - ../.env
     ports:
       - "5433:5432"
-
     volumes:
       - music_data:/var/lib/postgresql/data
 

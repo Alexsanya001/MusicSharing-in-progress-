@@ -36,7 +36,7 @@ public class NewEmailValidator extends BasicValidator<ValidEmailNew> {
         boolean isValid = super.isValid(value, context);
 
         if (isValid) {
-            if (userRepository.existsByEmail(value)) {
+            if (userRepository.existsByEmail(value.toLowerCase())) {
                 isValid = false;
                 context.buildConstraintViolationWithTemplate(uniqueMessageValue).addConstraintViolation();
             }
