@@ -19,7 +19,7 @@ public class ApiResponse<T> {
         return new ApiResponse<>(data, null);
     }
 
-    public static <T> ApiResponse<T> failure(List<ErrorDetail> errors) {
+    public static ApiResponse<?> failure(List<ErrorDetail> errors) {
         return new ApiResponse<>(null, errors);
     }
 }

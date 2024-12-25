@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
 
@@ -18,14 +20,14 @@ public class JWTUtil {
     private SecretKey key;
 
 
-    public String generateToken(String sub, Map<String, String> claims, long expiresIn) {
+    public String generateToken(String sub, Map<String, String> claims, Duration expiresIn) {
         initKey();
 
         return Jwts.builder()
                 .subject(sub)
                 .claims(claims)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiresIn))
+                .expiration(Date.from(Instant.now().plus(expiresIn)))
                 .signWith(key)
                 .compact();
     }

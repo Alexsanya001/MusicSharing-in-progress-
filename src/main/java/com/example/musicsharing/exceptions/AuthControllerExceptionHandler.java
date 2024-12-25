@@ -6,7 +6,6 @@ import com.example.musicsharing.models.dto.ErrorDetail;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -21,7 +20,7 @@ public class AuthControllerExceptionHandler {
 
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<ErrorDetail>> handleMethodArgumentNotValidException
+    public ResponseEntity<ApiResponse<?>> handleMethodArgumentNotValidException
             (MethodArgumentNotValidException ex) {
 
         BindingResult bindingResult = ex.getBindingResult();
@@ -35,26 +34,16 @@ public class AuthControllerExceptionHandler {
                                 fieldError.getDefaultMessage()))
                 );
 
-        ApiResponse<ErrorDetail> apiResponse = ApiResponse.failure(errorDetails);
+        ApiResponse<?> apiResponse = ApiResponse.failure(errorDetails);
 
         return ResponseEntity.badRequest().body(apiResponse);
     }
 
 
-    @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<ApiResponse<ErrorDetail>> handleUsernameNotFoundException(UsernameNotFoundException ex) {
-
-        ErrorDetail errorDetail = new ErrorDetail("authentication", ex.getMessage());
-        ApiResponse<ErrorDetail> apiResponse = ApiResponse.failure(List.of(errorDetail));
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
-    }
-
-
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ApiResponse<ErrorDetail>> handleBadCredentialsException(BadCredentialsException ex) {
+    public ResponseEntity<ApiResponse<?>> handleBadCredentialsException(BadCredentialsException ex) {
         ErrorDetail errorDetail = new ErrorDetail("authentication", "Bad credentials");
-        ApiResponse<ErrorDetail> apiResponse = ApiResponse.failure(List.of(errorDetail));
+        ApiResponse<?> apiResponse = ApiResponse.failure(List.of(errorDetail));
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
     }
 }

@@ -17,6 +17,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +33,10 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Value("${jwt-exp-time}")
-    private long tokenExpTime;
+    private Duration tokenExpTime;
+
+    @Value("${jwt-short-exp-time}")
+    private Duration tokenShortExpTime;
 
 
     @Override
@@ -60,7 +64,7 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String username) {
 
         User user = findByUsername(username);
 
@@ -89,6 +93,6 @@ public class UserServiceImpl implements UserService {
     private User findByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException(
-                        String.format("User %s not found", username)));
+                        String.format("User '%s' not found", username)));
     }
 }
