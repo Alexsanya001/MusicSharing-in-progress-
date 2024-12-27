@@ -12,14 +12,16 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApiResponse<T> {
+
+    private boolean isSuccess;
     private T data;
     private List<ErrorDetail> errors;
 
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(data, null);
+        return new ApiResponse<>(true, data, null);
     }
 
     public static ApiResponse<?> failure(List<ErrorDetail> errors) {
-        return new ApiResponse<>(null, errors);
+        return new ApiResponse<>(false, null, errors);
     }
 }

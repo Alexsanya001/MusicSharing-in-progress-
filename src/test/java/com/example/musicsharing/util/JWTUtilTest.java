@@ -50,7 +50,7 @@ class JWTUtilTest {
 
     @Test
     void extractClaim_shouldReturnClaim() {
-        Map<String, String> claims = new HashMap<>();
+        Map<String, Object> claims = new HashMap<>();
         claims.put("sub", "1");
         String token = jwtUtil.generateToken("1", claims, Duration.ofSeconds(5));
 

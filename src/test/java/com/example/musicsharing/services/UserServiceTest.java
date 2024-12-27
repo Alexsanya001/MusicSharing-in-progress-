@@ -1,7 +1,9 @@
 package com.example.musicsharing.services;
 
+import com.example.musicsharing.models.dto.ApiResponse;
 import com.example.musicsharing.models.dto.LoginDTO;
 import com.example.musicsharing.models.dto.RegisterDTO;
+import com.example.musicsharing.models.dto.LoginResponseDto;
 import com.example.musicsharing.models.dto.UserInfoDTO;
 import com.example.musicsharing.models.entities.Role;
 import com.example.musicsharing.models.entities.User;
@@ -58,7 +60,7 @@ class UserServiceTest {
     @Captor
     private ArgumentCaptor<String> idCaptor;
     @Captor
-    private ArgumentCaptor<Map<String, String>> claimsCaptor;
+    private ArgumentCaptor<Map<String, Object>> claimsCaptor;
     @Captor
     private ArgumentCaptor<Duration> timeCaptor;
 
@@ -99,7 +101,7 @@ class UserServiceTest {
     }
 
     @Test
-    void createTokenOnLogin_shouldReturnToken() {
+    void loginUser_shouldReturnToken() {
         LoginDTO loginDTO = LoginDTO.builder()
                 .username("username")
                 .build();
@@ -109,21 +111,19 @@ class UserServiceTest {
         user.setRole(Role.ROLE_USER);
         user.setId(1L);
 
-        String token = "token";
-
         when(userRepository.findByUsername(loginDTO.getUsername()))
                 .thenReturn(Optional.of(user));
         when(jwtUtil.generateToken(anyString(), anyMap(), any(Duration.class)))
-                .thenReturn(token);
+                .thenReturn("token");
 
         ReflectionTestUtils.setField(userServiceImpl, "tokenExpTime", Duration.ofMinutes(1));
 
-        String result = userService.createTokenOnLogin(loginDTO);
+        LoginResponseDto result = userService.loginUser(loginDTO);
 
         verify(jwtUtil).generateToken(idCaptor.capture(), claimsCaptor.capture(), timeCaptor.capture());
-        Map<String, String> claims = claimsCaptor.getValue();
+        Map<String, Object> claims = claimsCaptor.getValue();
 
-        assertEquals(token, result);
+        assertEquals("token", result.getToken());
         assertEquals(idCaptor.getValue(), String.valueOf(user.getId()));
         assertEquals(claims.get("username"), user.getUsername());
         assertEquals(claims.get("role"), Role.ROLE_USER.toString());
@@ -131,7 +131,7 @@ class UserServiceTest {
     }
 
     @Test
-    void createTokenOnLogin_shouldThrowException_whenUserNotFound() {
+    void loginUser_shouldThrowException_whenUserNotFound() {
         LoginDTO loginDTO = LoginDTO.builder()
                 .username("username")
                 .build();
@@ -140,7 +140,7 @@ class UserServiceTest {
                 .thenReturn(Optional.empty());
 
         assertThrows(UsernameNotFoundException.class,
-                () -> userService.createTokenOnLogin(loginDTO));
+                () -> userService.loginUser(loginDTO));
     }
 
     @Test

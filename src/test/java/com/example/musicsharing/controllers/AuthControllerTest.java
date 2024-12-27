@@ -3,6 +3,7 @@ package com.example.musicsharing.controllers;
 import com.example.musicsharing.models.dto.ApiResponse;
 import com.example.musicsharing.models.dto.LoginDTO;
 import com.example.musicsharing.models.dto.RegisterDTO;
+import com.example.musicsharing.models.dto.LoginResponseDto;
 import com.example.musicsharing.repositories.UserRepository;
 import com.example.musicsharing.services.UserService;
 import com.example.musicsharing.util.JWTUtil;
@@ -138,14 +139,14 @@ class AuthControllerTest {
                 .username("username")
                 .password("password")
                 .build();
-        String token = "token";
+        LoginResponseDto token = LoginResponseDto.builder().token("token").build();
         Authentication authentication = mock(Authentication.class);
-        ApiResponse<String> response = ApiResponse.success(token);
+        ApiResponse<LoginResponseDto> response = ApiResponse.success(token);
         String requestBody = objectMapper.writeValueAsString(loginDTO);
         String expectedJson = objectMapper.writeValueAsString(response);
 
         when(authenticationManager.authenticate(any(Authentication.class))).thenReturn(authentication);
-        when(userService.createTokenOnLogin(any(LoginDTO.class))).thenReturn(token);
+        when(userService.loginUser(any(LoginDTO.class))).thenReturn(token);
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

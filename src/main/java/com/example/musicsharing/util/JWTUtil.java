@@ -20,12 +20,24 @@ public class JWTUtil {
     private SecretKey key;
 
 
-    public String generateToken(String sub, Map<String, String> claims, Duration expiresIn) {
+    public String generateToken(String sub, Map<String, Object> claims, Duration expiresIn) {
         initKey();
 
         return Jwts.builder()
                 .subject(sub)
                 .claims(claims)
+                .issuedAt(new Date())
+                .expiration(Date.from(Instant.now().plus(expiresIn)))
+                .signWith(key)
+                .compact();
+    }
+
+
+    public String generateToken(String sub, Duration expiresIn) {
+        initKey();
+
+        return Jwts.builder()
+                .subject(sub)
                 .issuedAt(new Date())
                 .expiration(Date.from(Instant.now().plus(expiresIn)))
                 .signWith(key)
