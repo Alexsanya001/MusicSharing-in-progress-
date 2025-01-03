@@ -3,16 +3,15 @@ package com.example.musicsharing.controllers;
 import com.example.musicsharing.models.dto.ApiResponse;
 import com.example.musicsharing.models.dto.ForgotPasswordDto;
 import com.example.musicsharing.models.dto.ForgotPasswordResponse;
-import com.example.musicsharing.models.dto.LoginDTO;
-import com.example.musicsharing.models.dto.LoginResponseDto;
 import com.example.musicsharing.models.dto.RegisterDTO;
-import com.example.musicsharing.models.dto.RestorePasswordRequest;
+import com.example.musicsharing.models.dto.RestorePasswordDto;
 import com.example.musicsharing.services.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,13 +24,15 @@ import java.net.URI;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthController {
 
-    public static final String PASSWORD_RECOVERY_MESSAGE =
+    static String PASSWORD_RECOVERY_MESSAGE =
             "Instructions for password recovering were sent to %s";
+    static String CHANGE_PASSWORD_SUCCESS_MESSAGE =
+            "Password successfully changed";
 
-    private final UserService userService;
-    private final AuthenticationManager authManager;
+    UserService userService;
 
 
     @PostMapping("/register")
@@ -44,21 +45,7 @@ public class AuthController {
                 .fromPath("/api/users/{id}")
                 .buildAndExpand(id)
                 .toUri();
-
         return ResponseEntity.created(location).build();
-    }
-
-
-    @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponseDto>> login(@RequestBody LoginDTO loginDTO) {
-
-        authManager.authenticate(new UsernamePasswordAuthenticationToken(
-                loginDTO.getUsername(), loginDTO.getPassword()));
-
-        LoginResponseDto token = userService.loginUser(loginDTO);
-        ApiResponse<LoginResponseDto> response = ApiResponse.success(token);
-
-        return ResponseEntity.ok(response);
     }
 
 
@@ -67,28 +54,31 @@ public class AuthController {
             @RequestBody ForgotPasswordDto forgotPasswordDto) {
 
         userService.sendRecoveryLink(forgotPasswordDto);
-
         String message = String.format(PASSWORD_RECOVERY_MESSAGE, forgotPasswordDto.getEmail());
         ForgotPasswordResponse forgotPasswordResponse = ForgotPasswordResponse
                 .builder().message(message).build();
-
         ApiResponse<ForgotPasswordResponse> response = ApiResponse.success(forgotPasswordResponse);
-
         return ResponseEntity.ok(response);
     }
 
 
-    @PostMapping("/restore-password")
+    @PostMapping("/validate-token")
+    public ResponseEntity<ApiResponse<Boolean>> validateToken(@RequestParam String token) {
+        Boolean isValid = userService.validateToken(token);
+        ApiResponse<Boolean> response = ApiResponse.success(isValid);
+        return ResponseEntity.ok(response);
+    }
+
+
+    @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<String>> restorePassword(
-            @RequestParam String token,
-            @RequestBody @Valid RestorePasswordRequest request) {
+            @RequestBody @Valid RestorePasswordDto restorePasswordDto, HttpServletRequest request) {
 
-        if (userService.validateToken(token)) {
-            userService.changePassword(request, token);
-        }
+        String authHeader = request.getHeader("Authorization");
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+        userService.changePassword(restorePasswordDto, token);
 
-        ApiResponse<String> response = ApiResponse.success("Password successfully changed");
-
+        ApiResponse<String> response = ApiResponse.success(CHANGE_PASSWORD_SUCCESS_MESSAGE);
         return ResponseEntity.ok(response);
     }
 }

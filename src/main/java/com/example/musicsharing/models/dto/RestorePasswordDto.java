@@ -8,7 +8,8 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
-public class RestorePasswordRequest {
+public class RestorePasswordDto {
+
     @ValidPasswordNew
     private String newPassword;
 }

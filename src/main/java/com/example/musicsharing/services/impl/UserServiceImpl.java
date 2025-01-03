@@ -1,10 +1,8 @@
 package com.example.musicsharing.services.impl;
 
 import com.example.musicsharing.models.dto.ForgotPasswordDto;
-import com.example.musicsharing.models.dto.LoginDTO;
-import com.example.musicsharing.models.dto.LoginResponseDto;
 import com.example.musicsharing.models.dto.RegisterDTO;
-import com.example.musicsharing.models.dto.RestorePasswordRequest;
+import com.example.musicsharing.models.dto.RestorePasswordDto;
 import com.example.musicsharing.models.dto.UserInfoDTO;
 import com.example.musicsharing.models.entities.Role;
 import com.example.musicsharing.models.entities.User;
@@ -16,18 +14,13 @@ import com.example.musicsharing.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 @Service
@@ -51,7 +44,7 @@ public class UserServiceImpl implements UserService {
 
     public static final String RESTORE_PASSWORD_MESSAGE =
             "<b>To create a new password, follow the link below:</b>" +
-                    "<br><br><a href=\"%s/api/auth/restore?token=%s\">" +
+                    "<br><br><a href=\"%s/frontend-page?token=%s\">" +
                     "Click here to reset your password</a>";
 
 
@@ -62,31 +55,6 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole(Role.ROLE_USER);
         return userRepository.save(user).getId();
-    }
-
-
-    @Override
-    public LoginResponseDto loginUser(LoginDTO loginDTO) {
-
-        String username = loginDTO.getUsername();
-        User user = findByUsername(username);
-        String token = createAuthToken(user);
-
-        return LoginResponseDto.builder().token(token).build();
-    }
-
-
-    @Override
-    public UserDetails loadUserByUsername(String username) {
-
-        User user = findByUsername(username);
-
-        return new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
-                user.getPassword(),
-                Collections.singleton(new SimpleGrantedAuthority(
-                        user.getRole().name()))
-        );
     }
 
 
@@ -102,15 +70,14 @@ public class UserServiceImpl implements UserService {
         return userMapper.toUserInfoDTOList(userRepository.findAll());
     }
 
+
     @Override
     public void sendRecoveryLink(ForgotPasswordDto forgotPasswordDto) {
-
         String email = forgotPasswordDto.getEmail().toLowerCase();
         User user = userRepository.findByEmail(email).orElse(null);
 
         if (user != null) {
             String token = jwtUtil.generateToken(String.valueOf(user.getId()), tokenShortExpTime);
-            //TODO Save token to Redis
             sendEmailAsync(email, token);
         }
     }
@@ -125,7 +92,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void changePassword(RestorePasswordRequest request, String token) {
+    public void changePassword(RestorePasswordDto request, String token) {
         Long id = Long.parseLong(jwtUtil.extractClaim("sub", token));
         User user = userRepository.findById(id).orElse(null);
         if (user != null) {
@@ -137,7 +104,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean validateToken(String token) {
-        //TODO Check in Redis
         return jwtUtil.isTokenValid(token);
     }
 
@@ -146,12 +112,5 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException(
                         String.format("User '%s' not found", username)));
-    }
-
-    private String createAuthToken(User user) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("username", user.getUsername());
-        claims.put("role", user.getRole().name());
-        return jwtUtil.generateToken(String.valueOf(user.getId()), claims, tokenExpTime);
     }
 }

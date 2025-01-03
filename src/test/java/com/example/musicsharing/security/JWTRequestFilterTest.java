@@ -1,5 +1,6 @@
 package com.example.musicsharing.security;
 
+import com.example.musicsharing.security.filters.JWTRequestFilter;
 import com.example.musicsharing.util.JWTUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
