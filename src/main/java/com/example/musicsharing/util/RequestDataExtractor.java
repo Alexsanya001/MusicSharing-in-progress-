@@ -4,18 +4,24 @@ import com.example.musicsharing.models.dto.LoginDTO;
 import com.example.musicsharing.security.CustomHttpServletRequestWrapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+@Slf4j
 @Component
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class RequestDataExtractor {
 
-    private final JWTUtil jwtUtil;
-    private final ObjectMapper objectMapper;
+    JWTUtil jwtUtil;
+    ObjectMapper objectMapper;
 
     public LoginDTO extractLoginData(HttpServletRequest request) throws IOException {
         if (request instanceof CustomHttpServletRequestWrapper requestWrapper) {
@@ -38,7 +44,11 @@ public class RequestDataExtractor {
         String token = authHeader != null && authHeader.startsWith("Bearer ") ?
                 authHeader.substring(7) : null;
         if (token != null) {
-            userId = jwtUtil.extractClaim("sub", token);
+            try {
+                userId = jwtUtil.extractClaim("sub", token);
+            } catch (JwtException e) {
+                log.error(e.getMessage());
+            }
         }
         return userId;
     }

@@ -3,12 +3,12 @@ package com.example.musicsharing.security;
 import com.example.musicsharing.models.dto.ApiResponse;
 import com.example.musicsharing.util.JWTUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -20,21 +20,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
+    ObjectMapper objectMapper;
+    JWTUtil jwtUtil;
+    AttemptsLimitService attemptsLimitService;
+
     @Value("${jwt-exp-time}")
-    private Duration tokenExpTime;
+    @NonFinal
+    Duration tokenExpTime;
 
-    private static final String IDENTIFIER_PREFIX = "Username: %s";
-
-    private final ObjectMapper objectMapper;
-    private final JWTUtil jwtUtil;
-    private final AttemptsLimitService attemptsLimitService;
+    static String IDENTIFIER_PREFIX = "Username: %s";
 
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         CustomUserDetails user = (CustomUserDetails) authentication.getPrincipal();
         String token = generateToken(user);
         ApiResponse<String> responseBody = ApiResponse.success(token);

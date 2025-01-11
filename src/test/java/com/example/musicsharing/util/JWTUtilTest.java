@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class JWTUtilTest {
 
     public JWTUtil jwtUtil = new JWTUtil();
-    private final String secret = "bhvCCRctYVTvYTVVtyCCc76rrFB67T6B766TB6B66bt6bt6b6";
+    private static final String secret = "bhvCCRctYVTvYTVVtyCCc76rrFB67T6B766TB6B66bt6bt6b6";
 
     @BeforeEach
     public void setUp() {
@@ -30,10 +30,31 @@ class JWTUtilTest {
     }
 
     @Test
+    void generateTokenWithClaims_shouldReturnToken() {
+        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes());
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("username", "expected");
+
+        String token = jwtUtil.generateToken("1", claims, Duration.ofSeconds(5));
+
+        String username = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("username", String.class);
+
+        assertNotNull(token);
+        assertEquals("expected", username);
+
+    }
+
+
+    @Test
     void generateToken_shouldReturnToken() {
         SecretKey key = Keys.hmacShaKeyFor(secret.getBytes());
 
-        String token = jwtUtil.generateToken("1", new HashMap<>(), Duration.ofSeconds(5));
+        String token = jwtUtil.generateToken("1", Duration.ofSeconds(5));
 
         String expectedId = Jwts.parser()
                 .verifyWith(key)

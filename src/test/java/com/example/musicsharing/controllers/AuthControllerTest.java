@@ -1,18 +1,23 @@
 package com.example.musicsharing.controllers;
 
+import com.example.musicsharing.models.dto.ApiResponse;
+import com.example.musicsharing.models.dto.ForgotPasswordDto;
+import com.example.musicsharing.models.dto.ForgotPasswordResponse;
 import com.example.musicsharing.models.dto.RegisterDTO;
+import com.example.musicsharing.models.dto.RestorePasswordDto;
 import com.example.musicsharing.repositories.UserRepository;
 import com.example.musicsharing.security.AttemptsLimitService;
 import com.example.musicsharing.services.UserService;
 import com.example.musicsharing.util.JWTUtil;
 import com.example.musicsharing.util.RequestDataExtractor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -20,10 +25,13 @@ import java.util.Map;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -41,8 +49,6 @@ class AuthControllerTest {
     @MockitoBean
     private UserService userService;
     @MockitoBean
-    private AuthenticationManager authenticationManager;
-    @MockitoBean
     private JWTUtil jwtUtil;
     @MockitoBean
     private UserRepository userRepository;
@@ -50,6 +56,8 @@ class AuthControllerTest {
     private AttemptsLimitService attemptsLimitService;
     @MockitoBean
     private RequestDataExtractor requestDataExtractor;
+    @Mock
+    HttpServletRequest httpServletRequest;
 
 
     @Test
@@ -102,6 +110,7 @@ class AuthControllerTest {
         verify(userService, never()).createUser(any());
     }
 
+
     @Test
     void register_returnsFailure_whenUserOrEmailExists() throws Exception {
         RegisterDTO registerDTO = RegisterDTO.builder()
@@ -133,27 +142,67 @@ class AuthControllerTest {
     }
 
 
-//    @Test
-//    void login_shouldReturnToken_whenUserIsAuthenticated() throws Exception {
-//        LoginDTO loginDTO = LoginDTO.builder()
-//                .username("username")
-//                .password("password")
-//                .build();
-//        LoginResponseDto token = LoginResponseDto.builder().token("token").build();
-//        Authentication authentication = mock(Authentication.class);
-//        ApiResponse<LoginResponseDto> response = ApiResponse.success(token);
-//        String requestBody = objectMapper.writeValueAsString(loginDTO);
-//        String expectedJson = objectMapper.writeValueAsString(response);
-//
-//        when(authenticationManager.authenticate(any(Authentication.class))).thenReturn(authentication);
-//        when(userService.loginUser(any(LoginDTO.class))).thenReturn(token);
-//
-//        mockMvc.perform(post("/api/auth/login")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(requestBody))
-//                .andExpect(status().isOk())
-//                .andExpect(content().json(expectedJson))
-//                .andExpect(jsonPath("$.errors").isEmpty());
-//
-//    }
+    @Test
+    void sendRecoveryLink_shouldReturnApiResponseWithMessage() throws Exception {
+        ForgotPasswordDto forgotPasswordDto = ForgotPasswordDto.builder().email("test@email.com").build();
+        String requestBody = objectMapper.writeValueAsString(forgotPasswordDto);
+        String message = String.format("Instructions for password recovering were sent to %s",
+                forgotPasswordDto.getEmail());
+
+        ForgotPasswordResponse forgotPasswordResponse = ForgotPasswordResponse
+                .builder().message(message).build();
+        ApiResponse<ForgotPasswordResponse> response = ApiResponse.success(forgotPasswordResponse);
+        String responseBody = objectMapper.writeValueAsString(response);
+
+        doNothing().when(userService).sendRecoveryLink(forgotPasswordDto);
+
+        mockMvc.perform(post("/api/auth/forgot-password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(content().json(responseBody));
+
+        verify(userService).sendRecoveryLink(any(ForgotPasswordDto.class));
+    }
+
+
+    @Test
+    void validateToken_shouldReturnApiResponseWithSuccess() throws Exception {
+        String token = "token";
+        Boolean isValid = true;
+        when(userService.validateToken(token))
+                .thenReturn(isValid);
+
+        ApiResponse<Boolean> response = ApiResponse.success(isValid);
+        String responseBody = objectMapper.writeValueAsString(response);
+
+        mockMvc.perform(post("/api/auth/validate-token")
+                .param("token", token))
+                .andExpect(status().isOk())
+                .andExpect(content().json(responseBody));
+
+        verify(userService).validateToken(token);
+    }
+
+
+    @Test
+    void restorePassword_shouldReturnApiResponseWithSuccess() throws Exception {
+        RestorePasswordDto restorePasswordDto = RestorePasswordDto.builder()
+                .newPassword("ValidPassword1").build();
+        String requestBody = objectMapper.writeValueAsString(restorePasswordDto);
+        String token = "token";
+        String header = "Bearer " + token;
+        String successMessage = "Password successfully changed";
+
+        doNothing().when(userService).changePassword(restorePasswordDto, token);
+
+        mockMvc.perform(post("/api/auth/reset-password")
+                .header("Authorization", header)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(successMessage));
+
+        verify(userService).changePassword(any(RestorePasswordDto.class), eq(token));
+    }
 }

@@ -4,17 +4,20 @@ import com.example.musicsharing.models.dto.LoginDTO;
 import com.example.musicsharing.security.CustomAuthenticationFailureHandler;
 import com.example.musicsharing.security.CustomAuthenticationSuccessHandler;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class CustomUsernamePasswordAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
-    public static final String LOGIN_URL = "/api/auth/login";
+    static String LOGIN_URL = "/api/auth/login";
 
-    private final CustomAuthenticationSuccessHandler authSuccessHandler;
-    private final CustomAuthenticationFailureHandler authFailureHandler;
+    CustomAuthenticationSuccessHandler authSuccessHandler;
+    CustomAuthenticationFailureHandler authFailureHandler;
 
 
     @Override

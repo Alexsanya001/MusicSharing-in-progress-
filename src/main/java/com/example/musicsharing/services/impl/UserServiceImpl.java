@@ -11,9 +11,11 @@ import com.example.musicsharing.repositories.UserRepository;
 import com.example.musicsharing.services.MailService;
 import com.example.musicsharing.services.UserService;
 import com.example.musicsharing.util.JWTUtil;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,28 +26,29 @@ import java.util.List;
 
 
 @Service
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    private final UserMapper userMapper;
-    private final UserRepository userRepository;
-    private final JWTUtil jwtUtil;
-    private final PasswordEncoder passwordEncoder;
-    private final MailService mailService;
+    UserMapper userMapper;
+    UserRepository userRepository;
+    JWTUtil jwtUtil;
+    PasswordEncoder passwordEncoder;
+    MailService mailService;
 
-    @Value("${jwt-exp-time}")
-    private Duration tokenExpTime;
 
     @Value("${jwt-short-exp-time}")
-    private Duration tokenShortExpTime;
+    @NonFinal
+    Duration tokenShortExpTime;
 
     @Value("${domain}")
-    private String domain;
+    @NonFinal
+    String domain;
 
-    public static final String RESTORE_PASSWORD_MESSAGE =
-            "<b>To create a new password, follow the link below:</b>" +
+    static String RESTORE_PASSWORD_MESSAGE =
+            "<b>To reset your password click the link below:</b>" +
                     "<br><br><a href=\"%s/frontend-page?token=%s\">" +
-                    "Click here to reset your password</a>";
+                    "Create a new password</a>";
 
 
     @Override
@@ -78,25 +81,19 @@ public class UserServiceImpl implements UserService {
 
         if (user != null) {
             String token = jwtUtil.generateToken(String.valueOf(user.getId()), tokenShortExpTime);
-            sendEmailAsync(email, token);
+            String message = String.format(RESTORE_PASSWORD_MESSAGE, domain, token);
+            mailService.sendMail(email, "Restore password", message);
         }
-    }
-
-
-    @Async
-    public void sendEmailAsync(String email, String token) {
-        String message = String.format(RESTORE_PASSWORD_MESSAGE, domain, token);
-        mailService.sendMail(email, "Restore password", message);
     }
 
 
     @Override
     @Transactional
-    public void changePassword(RestorePasswordDto request, String token) {
+    public void changePassword(RestorePasswordDto requestBody, String token) {
         Long id = Long.parseLong(jwtUtil.extractClaim("sub", token));
         User user = userRepository.findById(id).orElse(null);
         if (user != null) {
-            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+            user.setPassword(passwordEncoder.encode(requestBody.getNewPassword()));
             userRepository.save(user);
         }
     }

@@ -1,33 +1,34 @@
 package com.example.musicsharing.security;
 
+import com.example.musicsharing.models.dto.ErrorDetail;
 import com.example.musicsharing.models.dto.LoginDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 
 @Component
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class CustomAuthenticationFailureHandler implements AuthenticationFailureHandler {
 
-    private final AttemptsLimitService attemptsLimitService;
-    private static final String IDENTIFIER_PREFIX = "Username: %s";
-    public static final String AUTHENTICATION_FAILURE_RESPONSE_BODY = "{\"error\":\"Authentication failed\"}";
+    AttemptsLimitService attemptsLimitService;
+
+    static String IDENTIFIER_PREFIX = "Username: %s";
+    static String FAILURE_MESSAGE = "Bad credentials";
+
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
-                                        AuthenticationException exception) throws IOException {
-
+                                        AuthenticationException exception) {
         catchFailureAttempt(request);
-
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
-        response.getWriter().write(AUTHENTICATION_FAILURE_RESPONSE_BODY);
-        response.getWriter().flush();
+        ErrorDetail errorDetail = new ErrorDetail("authentication", FAILURE_MESSAGE);
+        ResponseWrapper.generateAuthFailureResponse(response, errorDetail);
     }
 
 
