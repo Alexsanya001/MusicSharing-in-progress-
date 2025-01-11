@@ -1,5 +1,7 @@
-package com.example.musicsharing.security;
+package com.example.musicsharing.security.filters;
 
+import com.example.musicsharing.repositories.UserRepository;
+import com.example.musicsharing.security.AttemptsLimitService;
 import com.example.musicsharing.util.JWTUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -39,10 +41,15 @@ class JWTRequestFilterTest {
     private FilterChain filterChain;
     @Mock
     private JWTUtil jwtUtil;
+    @Mock
+    UserRepository userRepository;
+    @Mock
+    AttemptsLimitService attemptsLimitService;
+
 
     @BeforeEach
     public void setUp() {
-        jwtRequestFilter = new JWTRequestFilter(jwtUtil);
+        jwtRequestFilter = new JWTRequestFilter(jwtUtil, attemptsLimitService, userRepository);
         SecurityContextHolder.setContext(new SecurityContextImpl());
     }
 
@@ -74,6 +81,7 @@ class JWTRequestFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer validToken");
         when(jwtUtil.extractClaim("username", "validToken")).thenReturn("user");
         when(jwtUtil.extractClaim("role", "validToken")).thenReturn("ROLE_USER");
+        when(userRepository.existsByUsername("user")).thenReturn(true);
 
         jwtRequestFilter.doFilterInternal(request, response, filterChain);
 
@@ -86,6 +94,7 @@ class JWTRequestFilterTest {
     @Test
     void shouldReturnUnauthorized_whenTokenIsExpired() throws Exception {
         when(request.getHeader("Authorization")).thenReturn("Bearer expiredToken");
+        when(request.getRequestURI()).thenReturn("/mock-uri");
         doThrow(new ExpiredJwtException(null, null, "Token expired"))
                 .when(jwtUtil).extractClaim("username", "expiredToken");
 
@@ -95,7 +104,7 @@ class JWTRequestFilterTest {
         jwtRequestFilter.doFilterInternal(request, response, filterChain);
 
         verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        assertTrue(responseWriter.toString().contains("Authorization expired. Please login again."));
+        assertTrue(responseWriter.toString().contains("Token is expired."));
         verifyNoInteractions(filterChain);
     }
 
@@ -103,6 +112,7 @@ class JWTRequestFilterTest {
     @Test
     void shouldReturnUnauthorized_whenTokenIsNotValid() throws Exception {
         when(request.getHeader("Authorization")).thenReturn("Bearer invalidToken");
+        when(request.getRequestURI()).thenReturn("/reset-password");
         doThrow(new MalformedJwtException("Token is not valid"))
                 .when(jwtUtil).extractClaim("username", "invalidToken");
 
@@ -112,7 +122,7 @@ class JWTRequestFilterTest {
         jwtRequestFilter.doFilterInternal(request, response, filterChain);
 
         verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        assertTrue(responseWriter.toString().contains("Authorization failed"));
+        assertTrue(responseWriter.toString().contains("Token is invalid."));
         verifyNoInteractions(filterChain);
     }
 }

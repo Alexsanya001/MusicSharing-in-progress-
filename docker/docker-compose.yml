@@ -1,17 +1,37 @@
 version: '3.8'
 
 services:
-  db:
-    container_name: pg_db
+  postgres:
     image: postgres:alpine
+    container_name: pg_db
     restart: unless-stopped
     env_file:
     - ../.env
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - music_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    ports:
+      - "6363:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    networks:
+      - app_network
 
 volumes:
   music_data:
     driver: local
+
+networks:
+  app_network:
+    driver: bridge

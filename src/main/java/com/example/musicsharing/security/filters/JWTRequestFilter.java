@@ -1,0 +1,89 @@
+package com.example.musicsharing.security.filters;
+
+import com.example.musicsharing.models.dto.ErrorDetail;
+import com.example.musicsharing.repositories.UserRepository;
+import com.example.musicsharing.security.AttemptsLimitService;
+import com.example.musicsharing.security.ResponseWrapper;
+import com.example.musicsharing.util.JWTUtil;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.micrometer.common.lang.NonNullApi;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.Collections;
+
+@Component
+@NonNullApi
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@RequiredArgsConstructor
+public class JWTRequestFilter extends OncePerRequestFilter {
+
+    JWTUtil jwtUtil;
+    AttemptsLimitService attemptsLimitService;
+    UserRepository userRepository;
+
+    static String JWT_EXPIRED_MESSAGE = "Token is expired.";
+    static String JWT_INVALID_MESSAGE = "Token is invalid.";
+
+    @Override
+    public void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            String jwtToken = header.substring(7);
+            try {
+                String username = jwtUtil.extractClaim("username", jwtToken);
+                if (!userRepository.existsByUsername(username)){
+                    throw new MalformedJwtException("Jwt token with unknown username " + username);
+                }
+                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    String role = jwtUtil.extractClaim("role", jwtToken);
+                    UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+                            username,
+                            null,
+                            Collections.singleton(new SimpleGrantedAuthority(role))
+                    );
+                    SecurityContextHolder.getContext().setAuthentication(token);
+                }
+            } catch (JwtException ex) {
+                catchFailureAttempt(request);
+                handleJwtException(response, ex);
+                return;
+            }
+        }
+        filterChain.doFilter(request, response);
+    }
+
+
+    private static void handleJwtException(HttpServletResponse response, JwtException ex) {
+        ErrorDetail errorDetail = new ErrorDetail("token", null);
+        if (ex instanceof ExpiredJwtException) {
+            errorDetail.setMessage(JWT_EXPIRED_MESSAGE);
+        } else {
+            errorDetail.setMessage(JWT_INVALID_MESSAGE);
+        }
+        ResponseWrapper.generateAuthFailureResponse(response, errorDetail);
+    }
+
+
+    private void catchFailureAttempt(HttpServletRequest request){
+        if (request.getRequestURI().contains("/reset-password")) {
+            String ipAddress = request.getRemoteAddr();
+            String identifier = "IP: " + ipAddress;
+            attemptsLimitService.incrementLoginAttempts(identifier);
+        }
+    }
+}

@@ -6,17 +6,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 
 @SpringBootTest
 @ActiveProfiles("test")
+@Testcontainers
 class MusicSharingApplicationTests {
 
+    @Container
     static PostgreSQLContainer<?> postgres =
-            new PostgreSQLContainer<>("postgres:16-alpine")
-                    .withDatabaseName("test-db")
-                    .withUsername("test")
-                    .withPassword("test");
+            new PostgreSQLContainer<>("postgres:16-alpine");
+
 
     @BeforeAll
     static void setUp() {

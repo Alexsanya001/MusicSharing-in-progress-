@@ -2,7 +2,8 @@ package com.example.musicsharing.controllers;
 
 import com.example.musicsharing.models.dto.ApiResponse;
 import com.example.musicsharing.models.dto.UserInfoDTO;
-import com.example.musicsharing.security.JWTRequestFilter;
+import com.example.musicsharing.security.filters.AttemptsLimitFilter;
+import com.example.musicsharing.security.filters.JWTRequestFilter;
 import com.example.musicsharing.services.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,8 @@ class UserControllerTest {
     private UserService userService;
     @MockitoBean
     private JWTRequestFilter filter;
+    @MockitoBean
+    private AttemptsLimitFilter attemptsLimitFilter;
 
     @Mock
     private Principal principal;

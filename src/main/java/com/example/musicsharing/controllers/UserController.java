@@ -23,11 +23,8 @@ public class UserController {
     @GetMapping("/info")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<UserInfoDTO>> showUserInfo(Principal principal) {
-
         UserInfoDTO user = userService.showUser(principal.getName());
-
         ApiResponse<UserInfoDTO> response = ApiResponse.success(user);
-
         return ResponseEntity.ok(response);
     }
 
@@ -35,10 +32,8 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<UserInfoDTO>>> getAllUsers() {
-
         List<UserInfoDTO> users = userService.getAllUsers();
         ApiResponse<List<UserInfoDTO>> response = ApiResponse.success(users);
-
         return ResponseEntity.ok(response);
     }
 

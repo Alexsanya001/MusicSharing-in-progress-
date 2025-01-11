@@ -1,7 +1,11 @@
 package com.example.musicsharing.services;
 
+import com.example.musicsharing.models.dto.ApiResponse;
+import com.example.musicsharing.models.dto.ForgotPasswordDto;
 import com.example.musicsharing.models.dto.LoginDTO;
 import com.example.musicsharing.models.dto.RegisterDTO;
+import com.example.musicsharing.models.dto.LoginResponseDto;
+import com.example.musicsharing.models.dto.RestorePasswordDto;
 import com.example.musicsharing.models.dto.UserInfoDTO;
 import com.example.musicsharing.models.entities.Role;
 import com.example.musicsharing.models.entities.User;
@@ -30,10 +34,12 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -48,6 +54,8 @@ class UserServiceTest {
     private UserMapper userMapper;
     @Mock
     private JWTUtil jwtUtil;
+    @Mock
+    private MailService mailService;
 
     @InjectMocks
     private UserServiceImpl userServiceImpl;
@@ -56,11 +64,11 @@ class UserServiceTest {
     @Captor
     private ArgumentCaptor<User> userCaptor;
     @Captor
-    private ArgumentCaptor<String> idCaptor;
+    private ArgumentCaptor<String> emailCaptor;
     @Captor
-    private ArgumentCaptor<Map<String, String>> claimsCaptor;
+    private ArgumentCaptor<String> subjectCaptor;
     @Captor
-    private ArgumentCaptor<Duration> timeCaptor;
+    private ArgumentCaptor<String> messageCaptor;
 
 
     @BeforeEach
@@ -98,50 +106,6 @@ class UserServiceTest {
         assertEquals(Role.ROLE_USER, capturedUser.getRole());
     }
 
-    @Test
-    void createTokenOnLogin_shouldReturnToken() {
-        LoginDTO loginDTO = LoginDTO.builder()
-                .username("username")
-                .build();
-
-        User user = new User();
-        user.setUsername("username");
-        user.setRole(Role.ROLE_USER);
-        user.setId(1L);
-
-        String token = "token";
-
-        when(userRepository.findByUsername(loginDTO.getUsername()))
-                .thenReturn(Optional.of(user));
-        when(jwtUtil.generateToken(anyString(), anyMap(), any(Duration.class)))
-                .thenReturn(token);
-
-        ReflectionTestUtils.setField(userServiceImpl, "tokenExpTime", Duration.ofMinutes(1));
-
-        String result = userService.createTokenOnLogin(loginDTO);
-
-        verify(jwtUtil).generateToken(idCaptor.capture(), claimsCaptor.capture(), timeCaptor.capture());
-        Map<String, String> claims = claimsCaptor.getValue();
-
-        assertEquals(token, result);
-        assertEquals(idCaptor.getValue(), String.valueOf(user.getId()));
-        assertEquals(claims.get("username"), user.getUsername());
-        assertEquals(claims.get("role"), Role.ROLE_USER.toString());
-        assertEquals(Duration.ofMinutes(1L), timeCaptor.getValue());
-    }
-
-    @Test
-    void createTokenOnLogin_shouldThrowException_whenUserNotFound() {
-        LoginDTO loginDTO = LoginDTO.builder()
-                .username("username")
-                .build();
-
-        when(userRepository.findByUsername(loginDTO.getUsername()))
-                .thenReturn(Optional.empty());
-
-        assertThrows(UsernameNotFoundException.class,
-                () -> userService.createTokenOnLogin(loginDTO));
-    }
 
     @Test
     void showUser_shouldReturnUserInfoDto() {
@@ -159,6 +123,15 @@ class UserServiceTest {
         UserInfoDTO expected = userService.showUser("username");
         assertEquals(expected, userInfoDTO);
     }
+
+
+    @Test
+    void showUser_shouldThrowUsernameNotFoundException() {
+        when(userRepository.findByUsername(anyString()))
+                .thenReturn(Optional.empty());
+        assertThrows(UsernameNotFoundException.class, () -> userService.showUser("username"));
+    }
+
 
     @Test
     void getAllUsers_shouldReturnAllUsers() {
@@ -180,20 +153,75 @@ class UserServiceTest {
         assertIterableEquals(expected, List.of(userInfoDTO));
     }
 
+
     @Test
-    void loadUserByUsername_shouldReturnUserDetails() {
-        User user = new User();
-        user.setUsername("username");
-        user.setPassword("password");
-        user.setRole(Role.ROLE_USER);
+    void sendRecoveryLink_shouldSendLinkToExistingUser() {
+        ForgotPasswordDto dto = ForgotPasswordDto.builder().email("test@email.com").build();
+        when(userRepository.findByEmail(dto.getEmail())).thenReturn(Optional.of(new User()));
+        when(jwtUtil.generateToken(anyString(), any())).thenReturn("generated-token");
 
-        when(userRepository.findByUsername(anyString()))
-                .thenReturn(Optional.of(user));
+        userService.sendRecoveryLink(dto);
 
-        UserDetails expected = userService.loadUserByUsername("username");
+        verify(mailService).sendMail(emailCaptor.capture(), subjectCaptor.capture(), messageCaptor.capture());
 
-        assertEquals(expected.getUsername(), user.getUsername());
-        assertEquals(expected.getPassword(), user.getPassword());
-        assertEquals("ROLE_USER", expected.getAuthorities().stream().findFirst().get().getAuthority());
+        assertEquals(dto.getEmail(), emailCaptor.getValue());
+        assertEquals("Restore password", subjectCaptor.getValue());
+        assertTrue(messageCaptor.getValue().contains("?token=generated-token"));
     }
+
+
+    @Test
+    void sendRecoveryLink_shouldNotSend_whenEmailIsWrong() {
+        ForgotPasswordDto dto = ForgotPasswordDto.builder().email("not-existing@email.com").build();
+        when(userRepository.findByEmail(dto.getEmail())).thenReturn(Optional.empty());
+
+        userService.sendRecoveryLink(dto);
+
+        verify(mailService, never()).sendMail(anyString(), anyString(), anyString());
+    }
+
+
+    @Test
+    void changePassword_shouldChangePassword() {
+        RestorePasswordDto dto = RestorePasswordDto.builder().newPassword("New-password1").build();
+        String token = "token";
+        User user = new User();
+        user.setId(1L);
+        user.setPassword("Old-password");
+
+        when(jwtUtil.extractClaim("sub", token)).thenReturn("1");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode(dto.getNewPassword())).thenReturn("New-password1-encoded");
+
+        userService.changePassword(dto, token);
+
+        verify(userRepository).save(userCaptor.capture());
+        User capturedUser = userCaptor.getValue();
+        assertEquals("New-password1-encoded", capturedUser.getPassword());
+    }
+
+
+    @Test
+    void changePassword_shouldNotChangePassword_whenTokenIsWrong() {
+        RestorePasswordDto dto = RestorePasswordDto.builder().newPassword("New-password1").build();
+        String token = "token";
+
+        when(jwtUtil.extractClaim("sub", token)).thenReturn("1");
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        userService.changePassword(dto, token);
+
+        verify(passwordEncoder, never()).encode(any());
+        verify(userRepository, never()).save(any());
+    }
+
+
+    @Test
+    void validateToken_shouldValidateToken() {
+        when(jwtUtil.isTokenValid(anyString())).thenReturn(true);
+        boolean result = userService.validateToken("token");
+        assertTrue(result);
+    }
+
+
 }
