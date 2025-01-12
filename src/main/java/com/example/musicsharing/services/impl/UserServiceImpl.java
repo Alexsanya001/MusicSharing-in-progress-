@@ -46,9 +46,11 @@ public class UserServiceImpl implements UserService {
     String domain;
 
     static String RESTORE_PASSWORD_MESSAGE =
-            "<b>To reset your password click the link below:</b>" +
-                    "<br><br><a href=\"%s/frontend-page?token=%s\">" +
-                    "Create a new password</a>";
+            """
+                    <b>To reset your password click the button below:</b><br><br>
+                    <form action="%s/api/auth/validate-token?token=%s" method="POST">
+                        <button type="submit">Create a new password</button>
+                    </form>""";
 
 
     @Override

@@ -192,7 +192,7 @@ class AuthControllerTest {
         String requestBody = objectMapper.writeValueAsString(restorePasswordDto);
         String token = "token";
         String header = "Bearer " + token;
-        String successMessage = "Password successfully changed";
+        String successMessage = "Password successfully changed. Please sign in with new password.";
 
         doNothing().when(userService).changePassword(restorePasswordDto, token);
 

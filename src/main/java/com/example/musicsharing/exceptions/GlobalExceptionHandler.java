@@ -2,6 +2,8 @@ package com.example.musicsharing.exceptions;
 
 import com.example.musicsharing.models.dto.ApiResponse;
 import com.example.musicsharing.models.dto.ErrorDetail;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +39,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<ApiResponse<?>> handleAuthorizationDeniedException(AuthorizationDeniedException ex) {
-        ErrorDetail errorDetail = new ErrorDetail("authorization", ex.getMessage()+". Please contact your administrator.");
+        ErrorDetail errorDetail = new ErrorDetail("authorization", ex.getMessage() + ". Please contact your administrator.");
         ApiResponse<?> apiResponse = ApiResponse.failure(List.of(errorDetail));
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiResponse);
     }
@@ -49,5 +51,19 @@ public class GlobalExceptionHandler {
         ApiResponse<?> apiResponse = ApiResponse.failure(List.of(errorDetail));
 
         return ResponseEntity.internalServerError().body(apiResponse);
+    }
+
+
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<ApiResponse<?>> handleJwtException(JwtException ex) {
+        ErrorDetail errorDetail = new ErrorDetail("authentication", "");
+
+        if (ex instanceof ExpiredJwtException) {
+            errorDetail.setMessage("Token is expired. Please try again.");
+        } else {
+            errorDetail.setMessage("Token is invalid.");
+        }
+        ApiResponse<?> apiResponse = ApiResponse.failure(List.of(errorDetail));
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
     }
 }
