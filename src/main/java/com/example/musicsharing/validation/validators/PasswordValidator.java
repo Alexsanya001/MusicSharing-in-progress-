@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.util.regex.Pattern;
 
-public class NewPasswordValidator extends BasicValidator<ValidPasswordNew>{
+public class PasswordValidator extends BasicValidator<ValidPasswordNew>{
 
     @Value("${password.regexp}")
     String regexValue;

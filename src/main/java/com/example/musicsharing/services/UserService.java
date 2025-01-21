@@ -7,7 +7,7 @@ import com.example.musicsharing.models.dto.UserInfoDTO;
 
 import java.util.List;
 
-public interface UserService{
+public interface UserService {
     long createUser(RegisterDTO registerDTO);
 
     UserInfoDTO showUser(String username);
@@ -19,4 +19,6 @@ public interface UserService{
     void changePassword(RestorePasswordDto request, String token);
 
     boolean validateToken(String token);
+
+    UserInfoDTO updateUserInfo(String username, UserInfoDTO updateUserDto);
 }

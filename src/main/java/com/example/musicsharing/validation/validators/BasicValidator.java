@@ -1,7 +1,10 @@
 package com.example.musicsharing.validation.validators;
 
+import com.example.musicsharing.models.entities.User;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.lang.annotation.Annotation;
 import java.util.regex.Pattern;
@@ -24,5 +27,20 @@ public abstract class BasicValidator<A extends Annotation> implements Constraint
         }
 
         return isValid;
+    }
+
+
+    protected static boolean isDuplicate(User storedUser) {
+        String  currentUser = getCurrentUserFromAuth();
+        return !storedUser.getUsername().equals(currentUser);
+    }
+
+
+    private static String getCurrentUserFromAuth() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()) {
+            return (String) auth.getPrincipal();
+        }
+        return null;
     }
 }

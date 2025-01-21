@@ -79,6 +79,7 @@ class JWTRequestFilterTest {
     @Test
     void shouldSetAuthentication_whenTokenIsValid() throws Exception {
         when(request.getHeader("Authorization")).thenReturn("Bearer validToken");
+        when(request.getRequestURI()).thenReturn("/login");
         when(jwtUtil.extractClaim("username", "validToken")).thenReturn("user");
         when(jwtUtil.extractClaim("role", "validToken")).thenReturn("ROLE_USER");
         when(userRepository.existsByUsername("user")).thenReturn(true);
@@ -114,7 +115,7 @@ class JWTRequestFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer invalidToken");
         when(request.getRequestURI()).thenReturn("/reset-password");
         doThrow(new MalformedJwtException("Token is not valid"))
-                .when(jwtUtil).extractClaim("username", "invalidToken");
+                .when(jwtUtil).extractClaim("sub", "invalidToken");
 
         StringWriter responseWriter = new StringWriter();
         when(response.getWriter()).thenReturn(new PrintWriter(responseWriter));

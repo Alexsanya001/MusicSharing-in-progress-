@@ -1,15 +1,19 @@
 package com.example.musicsharing.validation.validators;
 
+import com.example.musicsharing.models.entities.User;
 import com.example.musicsharing.repositories.UserRepository;
-import com.example.musicsharing.validation.annotations.ValidEmailNew;
+import com.example.musicsharing.validation.annotations.ValidEmail;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.util.regex.Pattern;
 
+
+@Component
 @RequiredArgsConstructor
-public class NewEmailValidator extends BasicValidator<ValidEmailNew> {
+public class EmailValidator extends BasicValidator<ValidEmail> {
 
     private final UserRepository userRepository;
 
@@ -24,7 +28,7 @@ public class NewEmailValidator extends BasicValidator<ValidEmailNew> {
 
 
     @Override
-    public void initialize(ValidEmailNew annotation) {
+    public void initialize(ValidEmail annotation) {
         regex = regexValue;
         message = messageValue;
         pattern = Pattern.compile(regex);
@@ -32,16 +36,17 @@ public class NewEmailValidator extends BasicValidator<ValidEmailNew> {
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-
-        boolean isValid = super.isValid(value, context);
-
-        if (isValid) {
-            if (userRepository.existsByEmail(value.toLowerCase())) {
-                isValid = false;
-                context.buildConstraintViolationWithTemplate(uniqueMessageValue).addConstraintViolation();
-            }
+        if (!super.isValid(value, context)) {
+            return false;
         }
 
-        return isValid;
+        User storedUser = userRepository.findByEmail(value.toLowerCase()).orElse(null);
+        if (storedUser != null) {
+            if (isDuplicate(storedUser)) {
+                context.buildConstraintViolationWithTemplate(uniqueMessageValue).addConstraintViolation();
+                return false;
+            }
+        }
+        return true;
     }
 }
