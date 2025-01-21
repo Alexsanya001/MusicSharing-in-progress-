@@ -1,6 +1,6 @@
 package com.example.musicsharing.validation.annotations;
 
-import com.example.musicsharing.validation.validators.NewEmailValidator;
+import com.example.musicsharing.validation.validators.EmailValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 
@@ -11,8 +11,8 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = NewEmailValidator.class)
-public @interface ValidEmailNew {
+@Constraint(validatedBy = EmailValidator.class)
+public @interface ValidEmail {
 
     String message() default "Invalid email";
 

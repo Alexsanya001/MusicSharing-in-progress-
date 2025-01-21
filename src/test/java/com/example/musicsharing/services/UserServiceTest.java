@@ -1,10 +1,7 @@
 package com.example.musicsharing.services;
 
-import com.example.musicsharing.models.dto.ApiResponse;
 import com.example.musicsharing.models.dto.ForgotPasswordDto;
-import com.example.musicsharing.models.dto.LoginDTO;
 import com.example.musicsharing.models.dto.RegisterDTO;
-import com.example.musicsharing.models.dto.LoginResponseDto;
 import com.example.musicsharing.models.dto.RestorePasswordDto;
 import com.example.musicsharing.models.dto.UserInfoDTO;
 import com.example.musicsharing.models.entities.Role;
@@ -21,27 +18,16 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertIterableEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -224,4 +210,44 @@ class UserServiceTest {
     }
 
 
+    @Test
+    void updateUserInfo_shouldReturnUpdatedUserInfoDto() {
+        UserInfoDTO userInfoDTO = UserInfoDTO.builder()
+                .username("username")
+                .email("email@email.com")
+                .firstName("firstName")
+                .lastName("lastName")
+                .build();
+
+        UserInfoDTO updated = UserInfoDTO.builder()
+                .username("username")
+                .email("email@email.com")
+                .firstName("firstName")
+                .lastName("lastName")
+                .build();
+
+        User toUpdate = new User();
+
+        when(userRepository.findByUsername(anyString()))
+                .thenReturn(Optional.of(toUpdate));
+        when(userRepository.save(toUpdate))
+                .thenReturn(toUpdate);
+        when(userMapper.toUserInfoDTO(toUpdate))
+                .thenReturn(updated);
+
+        UserInfoDTO result = userService.updateUserInfo("username", userInfoDTO);
+
+        verify(userRepository).save(userCaptor.capture());
+        User capturedUser = userCaptor.getValue();
+
+        assertEquals("username", capturedUser.getUsername());
+        assertEquals("email@email.com", capturedUser.getEmail());
+        assertEquals("firstName", capturedUser.getFirstName());
+        assertEquals("lastName", capturedUser.getLastName());
+
+        assertEquals(userInfoDTO.getUsername(), result.getUsername());
+        assertEquals(userInfoDTO.getEmail(), result.getEmail());
+        assertEquals(userInfoDTO.getFirstName(), result.getFirstName());
+        assertEquals(userInfoDTO.getLastName(), result.getLastName());
+    }
 }

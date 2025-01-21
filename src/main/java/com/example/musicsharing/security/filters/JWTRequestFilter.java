@@ -35,6 +35,8 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class JWTRequestFilter extends OncePerRequestFilter {
 
+    //@TODO One good filter instead two bad
+
     JWTUtil jwtUtil;
     AttemptsLimitService attemptsLimitService;
     UserRepository userRepository;

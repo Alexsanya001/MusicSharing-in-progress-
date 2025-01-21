@@ -1,7 +1,8 @@
 package com.example.musicsharing.validation.validators;
 
+import com.example.musicsharing.models.entities.User;
 import com.example.musicsharing.repositories.UserRepository;
-import com.example.musicsharing.validation.annotations.ValidUsernameNew;
+import com.example.musicsharing.validation.annotations.ValidUsername;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,7 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import java.util.regex.Pattern;
 
 @RequiredArgsConstructor
-public class NewUsernameValidator extends BasicValidator<ValidUsernameNew> {
+public class UsernameValidator extends BasicValidator<ValidUsername> {
 
     private final UserRepository userRepository;
 
@@ -24,7 +25,7 @@ public class NewUsernameValidator extends BasicValidator<ValidUsernameNew> {
 
 
     @Override
-    public void initialize(ValidUsernameNew annotation) {
+    public void initialize(ValidUsername annotation) {
         regex = regexValue;
         message = messageValue;
         pattern = Pattern.compile(regex);
@@ -33,16 +34,17 @@ public class NewUsernameValidator extends BasicValidator<ValidUsernameNew> {
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-
-        boolean isValid = super.isValid(value, context);
-
-        if (isValid) {
-            if (userRepository.existsByUsername(value)) {
-                isValid = false;
-                context.buildConstraintViolationWithTemplate(uniqueMessage).addConstraintViolation();
-            }
+        if (!super.isValid(value, context)) {
+            return false;
         }
 
-        return isValid;
+        User storedUser = userRepository.findByUsername(value).orElse(null);
+        if (storedUser != null) {
+            if (isDuplicate(storedUser)) {
+                context.buildConstraintViolationWithTemplate(uniqueMessage).addConstraintViolation();
+                return false;
+            }
+        }
+        return true;
     }
 }

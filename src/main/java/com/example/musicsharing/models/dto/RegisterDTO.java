@@ -1,9 +1,9 @@
 package com.example.musicsharing.models.dto;
 
-import com.example.musicsharing.validation.annotations.ValidEmailNew;
+import com.example.musicsharing.validation.annotations.ValidEmail;
 import com.example.musicsharing.validation.annotations.ValidName;
 import com.example.musicsharing.validation.annotations.ValidPasswordNew;
-import com.example.musicsharing.validation.annotations.ValidUsernameNew;
+import com.example.musicsharing.validation.annotations.ValidUsername;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,13 +17,13 @@ import lombok.Setter;
 @AllArgsConstructor
 public class RegisterDTO {
 
-    @ValidUsernameNew
+    @ValidUsername
     private String username;
 
     @ValidPasswordNew
     private String password;
 
-    @ValidEmailNew
+    @ValidEmail
     private String email;
 
     @ValidName

@@ -107,6 +107,19 @@ public class UserServiceImpl implements UserService {
     }
 
 
+    @Override
+    @Transactional
+    public UserInfoDTO updateUserInfo(String username, UserInfoDTO updateUserDto) {
+        User user = findByUsername(username);
+        user.setUsername(updateUserDto.getUsername());
+        user.setEmail(updateUserDto.getEmail());
+        user.setFirstName(updateUserDto.getFirstName());
+        user.setLastName(updateUserDto.getLastName());
+        User updatedUser = userRepository.save(user);
+        return userMapper.toUserInfoDTO(updatedUser);
+    }
+
+
     private User findByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException(

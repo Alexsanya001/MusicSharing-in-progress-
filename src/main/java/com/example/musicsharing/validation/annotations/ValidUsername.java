@@ -1,6 +1,6 @@
 package com.example.musicsharing.validation.annotations;
 
-import com.example.musicsharing.validation.validators.NewUsernameValidator;
+import com.example.musicsharing.validation.validators.UsernameValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 
@@ -11,8 +11,8 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = NewUsernameValidator.class)
-public @interface ValidUsernameNew {
+@Constraint(validatedBy = UsernameValidator.class)
+public @interface ValidUsername {
 
     String message() default "Invalid username provided";
 

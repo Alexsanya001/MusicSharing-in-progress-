@@ -5,6 +5,7 @@ import com.example.musicsharing.models.dto.ForgotPasswordDto;
 import com.example.musicsharing.models.dto.ForgotPasswordResponse;
 import com.example.musicsharing.models.dto.RegisterDTO;
 import com.example.musicsharing.models.dto.RestorePasswordDto;
+import com.example.musicsharing.models.entities.User;
 import com.example.musicsharing.repositories.UserRepository;
 import com.example.musicsharing.security.AttemptsLimitService;
 import com.example.musicsharing.services.UserService;
@@ -22,6 +23,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.ArgumentMatchers.any;
@@ -121,12 +123,18 @@ class AuthControllerTest {
                 .lastName("Doe")
                 .build();
 
+        User existingUser = new User();
+        existingUser.setUsername(registerDTO.getUsername());
+        existingUser.setEmail(existingUser.getEmail());
+
         String requestBody = objectMapper.writeValueAsString(registerDTO);
 
-        when(userRepository.existsByUsername(registerDTO.getUsername().toLowerCase()))
-                .thenReturn(true);
-        when(userRepository.existsByEmail(registerDTO.getEmail().toLowerCase()))
-                .thenReturn(true);
+        when(userRepository.findByUsername(registerDTO.getUsername().toLowerCase()))
+                .thenReturn(Optional.of(existingUser));
+        when(userRepository.findByEmail(registerDTO.getEmail().toLowerCase()))
+                .thenReturn(Optional.of(existingUser));
+
+
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
