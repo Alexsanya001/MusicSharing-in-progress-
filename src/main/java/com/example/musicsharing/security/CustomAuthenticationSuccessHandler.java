@@ -56,7 +56,11 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         String userId = String.valueOf(user.getId());
         Map<String, Object> claims = new HashMap<>();
         claims.put("username", user.getUsername());
-        claims.put("role", user.getAuthorities().stream().findFirst().get().getAuthority());
+        user.getAuthorities()
+                .stream()
+                .findFirst()
+                .ifPresent(auth -> claims.put("role", auth.getAuthority()));
+
         return jwtUtil.generateToken(userId, claims, tokenExpTime);
     }
 }

@@ -1,5 +1,6 @@
 package com.example.musicsharing.security;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
@@ -9,6 +10,7 @@ import java.util.Collection;
 
 @Getter
 @Setter
+@EqualsAndHashCode(callSuper = true)
 public class CustomUserDetails extends User {
 
     private final long id;

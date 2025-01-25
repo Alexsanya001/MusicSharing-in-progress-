@@ -39,12 +39,10 @@ public class UsernameValidator extends BasicValidator<ValidUsername> {
         }
 
         User storedUser = userRepository.findByUsername(value).orElse(null);
-        if (storedUser != null) {
-            if (isDuplicate(storedUser)) {
+        if (storedUser != null && isDuplicate(storedUser)) {
                 context.buildConstraintViolationWithTemplate(uniqueMessage).addConstraintViolation();
                 return false;
             }
-        }
         return true;
     }
 }
