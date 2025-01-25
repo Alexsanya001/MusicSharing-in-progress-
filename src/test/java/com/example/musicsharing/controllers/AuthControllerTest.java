@@ -1,10 +1,6 @@
 package com.example.musicsharing.controllers;
 
-import com.example.musicsharing.models.dto.ApiResponse;
-import com.example.musicsharing.models.dto.ForgotPasswordDto;
-import com.example.musicsharing.models.dto.ForgotPasswordResponse;
-import com.example.musicsharing.models.dto.RegisterDTO;
-import com.example.musicsharing.models.dto.RestorePasswordDto;
+import com.example.musicsharing.models.dto.*;
 import com.example.musicsharing.models.entities.User;
 import com.example.musicsharing.repositories.UserRepository;
 import com.example.musicsharing.security.AttemptsLimitService;
@@ -16,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -28,15 +25,9 @@ import java.util.Optional;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
 @WebMvcTest(AuthController.class)
@@ -60,6 +51,11 @@ class AuthControllerTest {
     private RequestDataExtractor requestDataExtractor;
     @Mock
     HttpServletRequest httpServletRequest;
+
+    @Value("${username.unique.message}")
+    private String uniqueUsernameMessage;
+    @Value("${email.unique.message}")
+    private String uniqueEmailMessage;
 
 
     @Test
@@ -135,15 +131,14 @@ class AuthControllerTest {
                 .thenReturn(Optional.of(existingUser));
 
 
-
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors").isArray())
                 .andExpect(jsonPath("$.errors", containsInAnyOrder(
-                        Map.of("field", "username", "message", "Username already taken."),
-                        Map.of("field", "email", "message", "Email already in use.")
+                        Map.of("field", "username", "message", uniqueUsernameMessage),
+                        Map.of("field", "email", "message", uniqueEmailMessage)
                 )));
 
         verify(userService, never()).createUser(any());
@@ -154,7 +149,7 @@ class AuthControllerTest {
     void sendRecoveryLink_shouldReturnApiResponseWithMessage() throws Exception {
         ForgotPasswordDto forgotPasswordDto = ForgotPasswordDto.builder().email("test@email.com").build();
         String requestBody = objectMapper.writeValueAsString(forgotPasswordDto);
-        String message = String.format("Instructions for password recovering were sent to %s",
+        String message = String.format(AuthController.PASSWORD_RECOVERY_MESSAGE,
                 forgotPasswordDto.getEmail());
 
         ForgotPasswordResponse forgotPasswordResponse = ForgotPasswordResponse
@@ -165,8 +160,8 @@ class AuthControllerTest {
         doNothing().when(userService).sendRecoveryLink(forgotPasswordDto);
 
         mockMvc.perform(post("/api/auth/forgot-password")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isOk())
                 .andExpect(content().json(responseBody));
 
@@ -185,7 +180,7 @@ class AuthControllerTest {
         String responseBody = objectMapper.writeValueAsString(response);
 
         mockMvc.perform(post("/api/auth/validate-token")
-                .param("token", token))
+                        .param("token", token))
                 .andExpect(status().isOk())
                 .andExpect(content().json(responseBody));
 
@@ -200,16 +195,14 @@ class AuthControllerTest {
         String requestBody = objectMapper.writeValueAsString(restorePasswordDto);
         String token = "token";
         String header = "Bearer " + token;
-        String successMessage = "Password successfully changed. Please sign in with new password.";
-
         doNothing().when(userService).changePassword(restorePasswordDto, token);
 
         mockMvc.perform(post("/api/auth/reset-password")
-                .header("Authorization", header)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+                        .header("Authorization", header)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").value(successMessage));
+                .andExpect(jsonPath("$.data").value(AuthController.CHANGE_PASSWORD_SUCCESS_MESSAGE));
 
         verify(userService).changePassword(any(RestorePasswordDto.class), eq(token));
     }

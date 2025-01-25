@@ -41,12 +41,10 @@ public class EmailValidator extends BasicValidator<ValidEmail> {
         }
 
         User storedUser = userRepository.findByEmail(value.toLowerCase()).orElse(null);
-        if (storedUser != null) {
-            if (isDuplicate(storedUser)) {
+        if (storedUser != null && isDuplicate(storedUser)) {
                 context.buildConstraintViolationWithTemplate(uniqueMessageValue).addConstraintViolation();
                 return false;
             }
-        }
         return true;
     }
 }

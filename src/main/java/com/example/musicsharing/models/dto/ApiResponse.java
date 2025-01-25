@@ -26,7 +26,7 @@ public class ApiResponse<T> {
         return new ApiResponse<>(true, data, null);
     }
 
-    public static ApiResponse<?> failure(List<ErrorDetail> errors) {
+    public static <T> ApiResponse<T> failure(List<ErrorDetail> errors) {
         return new ApiResponse<>(false, null, errors);
     }
 }

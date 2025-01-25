@@ -1,22 +1,13 @@
 package com.example.musicsharing.controllers;
 
-import com.example.musicsharing.models.dto.ApiResponse;
-import com.example.musicsharing.models.dto.ForgotPasswordDto;
-import com.example.musicsharing.models.dto.ForgotPasswordResponse;
-import com.example.musicsharing.models.dto.RegisterDTO;
-import com.example.musicsharing.models.dto.RestorePasswordDto;
+import com.example.musicsharing.models.dto.*;
 import com.example.musicsharing.services.UserService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
@@ -28,7 +19,7 @@ import java.net.URI;
 public class AuthController {
 
     static String PASSWORD_RECOVERY_MESSAGE =
-            "Instructions for password recovering were sent to %s";
+            "Instructions for password recovering were sent to %s if it is registered in the system.";
     static String CHANGE_PASSWORD_SUCCESS_MESSAGE =
             "Password successfully changed. Please sign in with new password.";
 
