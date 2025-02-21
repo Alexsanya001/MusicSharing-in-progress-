@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -30,32 +31,27 @@ class AttemptsLimitServiceTest {
     @Mock
     StringRedisTemplate redisTemplate;
     @Mock
-    MailService mailService;
-    @Mock
     ValueOperations<String, String> valueOperations;
     @Mock
     RequestDataExtractor dataExtractor;
     @Mock
     HttpServletRequest request;
+    @Mock
+    ApplicationEventPublisher eventPublisher;
 
     private AttemptsLimitService attemptsLimitService;
 
     private static final String recordPrefix = "Authentication failure | ";
     private static final String identifier = "Username: testUser";
     private static final String key = recordPrefix + identifier;
-    private static final String adminEmail = "test@example.com";
     private static final String ipAddress = "192.168.1.1";
-    private static final String messageSubject = "Suspicious attempt";
-    private static final String messageTemplate = "Too many attempts for identifier: ";
-
 
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
         lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        attemptsLimitService = new AttemptsLimitService(redisTemplate, mailService, dataExtractor);
-        ReflectionTestUtils.setField(attemptsLimitService, "adminEmail", adminEmail);
+        attemptsLimitService = new AttemptsLimitService(redisTemplate, dataExtractor, eventPublisher);
     }
 
 
@@ -117,8 +113,8 @@ class AttemptsLimitServiceTest {
         attemptsLimitService.prepareSuspiciousAttempt(request, identifier);
 
         String expectedIdentifier = identifier + " | IP: " + ipAddress;
-        verify(mailService).sendMail(eq(adminEmail), eq(messageSubject),
-                eq(messageTemplate + expectedIdentifier));
+        SuspiciousAttemptEvent event = new SuspiciousAttemptEvent(expectedIdentifier);
+        verify(eventPublisher).publishEvent(eq(event));
     }
 
 
@@ -130,7 +126,7 @@ class AttemptsLimitServiceTest {
         attemptsLimitService.prepareSuspiciousAttempt(request, identifier);
 
         String expectedIdentifier = "UserId: 1 | " + identifier;
-        verify(mailService).sendMail(eq(adminEmail), eq(messageSubject),
-                eq(messageTemplate + expectedIdentifier));
+        SuspiciousAttemptEvent event = new SuspiciousAttemptEvent(expectedIdentifier);
+        verify(eventPublisher).publishEvent(eq(event));
     }
 }
