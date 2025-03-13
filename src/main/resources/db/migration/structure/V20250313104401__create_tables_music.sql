@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS music
     id        BIGSERIAL PRIMARY KEY,
     title     VARCHAR NOT NULL,
     price     DECIMAL(10, 2),
-    author_id BIGINT  NOT NULL REFERENCES users (id) ON DELETE CASCADE
+    author_id BIGINT  NOT NULL DEFAULT 1 REFERENCES users (id) ON DELETE SET DEFAULT
 );
 
 -- Music files
