@@ -1,0 +1,15 @@
+storage:
+  provider: minio
+
+  minio:
+    endpoint: https://localhost:9000
+    region: us-east-1
+    access-key: ${MINIO_ADMIN}
+    secret-key: ${MINIO_PASSWORD}
+    bucket-name: music
+
+  aws:
+    region: us-east-1
+    access-key: null
+    secret-key: null
+    bucket-name: music

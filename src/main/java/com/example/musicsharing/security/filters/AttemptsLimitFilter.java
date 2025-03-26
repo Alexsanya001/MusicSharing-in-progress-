@@ -34,6 +34,12 @@ public class AttemptsLimitFilter implements Filter {
                          FilterChain filterChain) throws IOException, ServletException {
 
         if (request instanceof HttpServletRequest httpRequest) {
+            String contentType = httpRequest.getContentType();
+
+            if (contentType != null && contentType.startsWith("multipart/form-data")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             CustomHttpServletRequestWrapper requestWrapper = new CustomHttpServletRequestWrapper(httpRequest);
             String uri = httpRequest.getRequestURI();
 

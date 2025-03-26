@@ -42,14 +42,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiResponse);
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiResponse<?>> handleRuntimeException(RuntimeException ex) {
-        String message = "Internal server error";
-        ErrorDetail errorDetail = new ErrorDetail(null, message);
-        ApiResponse<?> apiResponse = ApiResponse.failure(List.of(errorDetail));
-
-        return ResponseEntity.internalServerError().body(apiResponse);
-    }
+//    @ExceptionHandler(RuntimeException.class)
+//    public ResponseEntity<ApiResponse<?>> handleRuntimeException(RuntimeException ex) {
+//        String message = "Internal server error";
+//        ErrorDetail errorDetail = new ErrorDetail(null, message + ex.getMessage());
+//        ApiResponse<?> apiResponse = ApiResponse.failure(List.of(errorDetail));
+//
+//        return ResponseEntity.internalServerError().body(apiResponse);
+//    }
 
 
     @ExceptionHandler(JwtException.class)

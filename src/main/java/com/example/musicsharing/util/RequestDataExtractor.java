@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 @Slf4j
 @Component
@@ -25,14 +26,15 @@ public class RequestDataExtractor {
 
     public LoginDTO extractLoginData(HttpServletRequest request) throws IOException {
         if (request instanceof CustomHttpServletRequestWrapper requestWrapper) {
-            String body = requestWrapper.getBody();
-            JsonNode jsonNode = objectMapper.readTree(body);
-            String username = jsonNode.get("username").asText();
-            String password = jsonNode.get("password").asText();
-            return LoginDTO.builder()
-                    .username(username)
-                    .password(password)
-                    .build();
+            try (InputStream inputStream = requestWrapper.getInputStream()) {
+                JsonNode jsonNode = objectMapper.readTree(inputStream);
+                String username = jsonNode.get("username").asText();
+                String password = jsonNode.get("password").asText();
+                return LoginDTO.builder()
+                        .username(username)
+                        .password(password)
+                        .build();
+            }
         }
         return null;
     }

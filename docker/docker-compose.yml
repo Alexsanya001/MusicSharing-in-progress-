@@ -22,8 +22,46 @@ services:
       - redis_data:/data
     command: redis-server --requirepass "${REDIS_PASSWORD}"
 
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio_music
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ADMIN}
+      - MINIO_ROOT_PASSWORD=${MINIO_PASSWORD}
+      - MINIO_REGION=us-east-1
+      - MINIO_SCHEME=https
+      - SSL_CERT_FILE=/root/.minio/certs/public.crt
+    volumes:
+      - minio_data:/data
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /home/alexsanya001/minio/.minio/certs:/root/.minio/certs
+      - /home/alexsanya001/minio/.mc/certs:/root/.mc/certs
+    entrypoint:
+      - "sh"
+      - "-c"
+      - |
+        minio server /data --console-address ":9001" --compat &
+        MINIO_PID=$!
+        chown root:root /root/.minio/certs/public.crt
+        chown root:root /root/.minio/certs/private.key
+        until curl -s https://localhost:9000/minio/health/live; do
+          echo -ne "Waiting for Minio to start...\r"
+          sleep 1
+        done
+        mc alias set local https://localhost:9000 ${MINIO_ADMIN} ${MINIO_PASSWORD}
+        mc mb local/music;
+        wait ${MINIO_PID}
+
+
 volumes:
   music_data:
     name: music_data
   redis_data:
     name: redis_data
+  minio_data:
+    name: minio_data

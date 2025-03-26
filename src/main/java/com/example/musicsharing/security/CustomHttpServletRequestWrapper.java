@@ -9,33 +9,26 @@ import lombok.Getter;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringReader;
+import java.io.InputStreamReader;
 
 @Getter
 public class CustomHttpServletRequestWrapper extends HttpServletRequestWrapper {
 
-    private final String body;
+    private final byte[] body;
 
     public CustomHttpServletRequestWrapper(HttpServletRequest request) throws IOException {
         super(request);
-        StringBuilder builder = new StringBuilder();
-        String line;
-        try (BufferedReader reader = request.getReader()) {
-            while ((line = reader.readLine()) != null) {
-                builder.append(line);
-            }
-        }
-        body = builder.toString();
+        body = request.getInputStream().readAllBytes();
     }
 
     @Override
     public BufferedReader getReader() {
-        return new BufferedReader(new StringReader(body));
+        return new BufferedReader(new InputStreamReader(new ByteArrayInputStream(body)));
     }
 
     @Override
     public ServletInputStream getInputStream() {
-        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(body.getBytes());
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(body);
         return new ServletInputStream() {
             @Override
             public boolean isFinished() {
