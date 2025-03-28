@@ -33,7 +33,7 @@ public class MusicController {
 //    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 //    public ResponseEntity<String> upload(
 //            @RequestPart("dto") @Validated SongUploadRequestDto dto,
-//            @RequestPart("file") MultipartFile file,
+//            @RequestPart("file") File file,
 //            Principal author) {
 //
 //        String link = musicService.uploadTrack(file, dto, author);
@@ -46,7 +46,7 @@ public class MusicController {
             @RequestPart("file") MultipartFile file) throws IOException {
         File tempFile = File.createTempFile("upload_", file.getOriginalFilename());
         file.transferTo(tempFile);
-        service.uploadFile("music", tempFile);
+        service.uploadFile(tempFile.getName(), tempFile);
         return ResponseEntity.ok("ok");
     }
 }

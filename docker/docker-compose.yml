@@ -39,8 +39,8 @@ services:
       - minio_data:/data
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-      - /home/alexsanya001/minio/.minio/certs:/root/.minio/certs
-      - /home/alexsanya001/minio/.mc/certs:/root/.mc/certs
+      - .minio/certs:/root/.minio/certs
+      - .mc/certs:/root/.mc/certs
     entrypoint:
       - "sh"
       - "-c"

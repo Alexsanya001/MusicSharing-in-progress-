@@ -4,6 +4,7 @@ import com.example.musicsharing.models.dto.ErrorDetail;
 import com.example.musicsharing.models.entities.User;
 import com.example.musicsharing.repositories.UserRepository;
 import com.example.musicsharing.security.AttemptsLimitService;
+import com.example.musicsharing.security.CustomUserDetails;
 import com.example.musicsharing.security.ResponseWrapper;
 import com.example.musicsharing.util.JWTUtil;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -19,7 +20,9 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -110,16 +113,16 @@ public class JWTRequestFilter extends OncePerRequestFilter {
 
     private void doRegularFilter(String jwtToken) {
         String username = jwtUtil.extractClaim("username", jwtToken);
-        if (!userRepository.existsByUsername(username)) {
-            throw new MalformedJwtException("Jwt token with unknown username " + username);
-        }
-
-        if (SecurityContextHolder.getContext().getAuthentication() == null) {
-            String role = jwtUtil.extractClaim("role", jwtToken);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(
+                        () -> new MalformedJwtException("Jwt token with unknown username " + username)
+                );
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
             UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
-                    username,
+                    new CustomUserDetails(user),
                     null,
-                    Collections.singleton(new SimpleGrantedAuthority(role))
+                    Collections.singleton(new SimpleGrantedAuthority(user.getRole().name()))
             );
             SecurityContextHolder.getContext().setAuthentication(token);
         }

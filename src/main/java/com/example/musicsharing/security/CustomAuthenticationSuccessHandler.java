@@ -52,11 +52,11 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     }
 
 
-    private String generateToken(CustomUserDetails user) {
-        String userId = String.valueOf(user.getId());
+    private String generateToken(CustomUserDetails principal) {
+        String userId = String.valueOf(principal.user().getId());
         Map<String, Object> claims = new HashMap<>();
-        claims.put("username", user.getUsername());
-        user.getAuthorities()
+        claims.put("username", principal.getUsername());
+        principal.getAuthorities()
                 .stream()
                 .findFirst()
                 .ifPresent(auth -> claims.put("role", auth.getAuthority()));

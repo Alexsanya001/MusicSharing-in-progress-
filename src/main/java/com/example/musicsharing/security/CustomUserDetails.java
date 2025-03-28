@@ -1,22 +1,31 @@
 package com.example.musicsharing.security;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import com.example.musicsharing.models.entities.User;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.Collections;
 
-@Getter
-@Setter
-@EqualsAndHashCode(callSuper = true)
-public class CustomUserDetails extends User {
+public record CustomUserDetails(User user) implements UserDetails {
 
-    private final long id;
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Collections.singleton(new SimpleGrantedAuthority(user.getRole().name()));
+    }
 
-    public CustomUserDetails(long id, String username, String password, Collection<? extends GrantedAuthority> authorities) {
-        super(username, password, authorities);
-        this.id = id;
+    @Override
+    public String getPassword() {
+        return user.getPassword();
+    }
+
+    @Override
+    public String getUsername() {
+        return user.getUsername();
+    }
+
+    public String getName() {
+        return getUsername();
     }
 }

@@ -2,18 +2,19 @@ package com.example.musicsharing.controllers;
 
 import com.example.musicsharing.models.dto.ApiResponse;
 import com.example.musicsharing.models.dto.UserInfoDTO;
+import com.example.musicsharing.security.CustomUserDetails;
 import com.example.musicsharing.services.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -24,9 +25,9 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/info")
-    public ResponseEntity<ApiResponse<UserInfoDTO>> showUserInfo(Principal principal) {
-        UserInfoDTO user = userService.showUser(principal.getName());
-        ApiResponse<UserInfoDTO> response = ApiResponse.success(user);
+    public ResponseEntity<ApiResponse<UserInfoDTO>> showUserInfo(@AuthenticationPrincipal CustomUserDetails principal) {
+        UserInfoDTO userInfoDTO = userService.showUser(principal.getName());
+        ApiResponse<UserInfoDTO> response = ApiResponse.success(userInfoDTO);
         return ResponseEntity.ok(response);
     }
 
@@ -39,10 +40,10 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    
+
     @PutMapping
     public ResponseEntity<ApiResponse<UserInfoDTO>> updateUserInfo(
-            @RequestBody @Valid UserInfoDTO updateUserDto, Principal principal) {
+            @RequestBody @Valid UserInfoDTO updateUserDto, @AuthenticationPrincipal CustomUserDetails principal) {
         UserInfoDTO updatedUser = userService.updateUserInfo(principal.getName(), updateUserDto);
         ApiResponse<UserInfoDTO> response = ApiResponse.success(updatedUser);
         return ResponseEntity.ok(response);

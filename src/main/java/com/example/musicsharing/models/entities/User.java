@@ -29,7 +29,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = "password")
+@ToString(exclude = {"password", "createdTracks", "purchasedTracks"})
 public class User {
 
     @Id
@@ -41,6 +41,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String username;
 
+    @Column(nullable = false)
     private String password;
 
     @Column(nullable = false, unique = true)
