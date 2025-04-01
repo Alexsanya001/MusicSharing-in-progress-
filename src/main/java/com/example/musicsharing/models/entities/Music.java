@@ -38,7 +38,7 @@ public class Music {
     @Column(nullable = false)
     private String title;
 
-    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.REFRESH})
+    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     @JoinTable(
             name = "music_genres",
             joinColumns = @JoinColumn(name = "music_id"),
