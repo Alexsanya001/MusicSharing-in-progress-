@@ -36,4 +36,9 @@ public class MusicFile {
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "music_id", nullable = false)
     private Music music;
+
+    public MusicFile(String fileUrl, Music music) {
+        this.fileUrl = fileUrl;
+        this.music = music;
+    }
 }

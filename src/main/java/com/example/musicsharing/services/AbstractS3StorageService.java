@@ -1,15 +1,11 @@
 package com.example.musicsharing.services;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
-import software.amazon.awssdk.http.SdkHttpClient;
-import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
@@ -17,29 +13,30 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.io.File;
 import java.io.InputStream;
 import java.net.URI;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 public abstract class AbstractS3StorageService implements ObjectStorageService {
     protected final S3Client s3Client;
     protected final String bucketName;
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    protected final String endpoint;
+    protected final String region;
 
     protected AbstractS3StorageService(String endpoint, String accessKey, String secretKey, String bucketName, String region) {
         this.bucketName = bucketName;
         this.s3Client = createS3Client(endpoint, accessKey, secretKey, region);
+        this.endpoint = endpoint;
+        this.region = region;
     }
 
     private S3Client createS3Client(String endpoint, String accessKey, String secretKey, String region) {
-        SdkHttpClient httpClient = ApacheHttpClient.builder().build();
         S3ClientBuilder builder = S3Client.builder()
                 .region(Region.of(region))
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(accessKey, secretKey)
                 ))
-                .httpClient(httpClient)
                 .overrideConfiguration(ClientOverrideConfiguration.builder().build())
                 .forcePathStyle(true);
 
@@ -51,14 +48,13 @@ public abstract class AbstractS3StorageService implements ObjectStorageService {
 
     @Async
     @Override
-    public void uploadFile(String key, File file) {
-        System.setProperty("aws.sdk.logging", "true");
+    public void uploadFile(String key, InputStream inputStream, long size) {
         s3Client.putObject(
                 PutObjectRequest.builder()
                         .bucket(bucketName)
                         .key(key)
                         .build(),
-                RequestBody.fromFile(file)
+                RequestBody.fromInputStream(inputStream, size)
         );
     }
 
@@ -81,4 +77,10 @@ public abstract class AbstractS3StorageService implements ObjectStorageService {
                 .key(key)
                 .build());
     }
+
+    @Override
+    public abstract String getPublicUrl(String key);
+
+    @Override
+    public abstract String getPreSignedUrl(String key, Duration duration);
 }
