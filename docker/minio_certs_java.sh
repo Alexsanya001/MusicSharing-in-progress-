@@ -1,6 +1,6 @@
 #!/bin/bash
 #=====================================================================================================================
-#             This script creates a certificate for Minio and adds it to Java-trusted-certificates
+#             This script creates a self-signed certificate for Minio and adds it to Java-trusted-certificates
 #=====================================================================================================================
 # Detect OS and set specific variables
 case "$(uname -s)" in
@@ -75,9 +75,9 @@ echo "Detected OS: $OS"
 
 # Get host function
 get_minio_host() {
-	read -rp 'Set host where Minio will work (IPV4, IPV6 or domain name) or press ENTER for default value "localhost": ' HOST
-	MINIO_HOST=${HOST:-localhost}
-	validate_host "$MINIO_HOST"
+	  read -rp 'Set host where Minio will work (IPV4, IPV6 or domain name) or press ENTER for default value "localhost": ' HOST
+	  MINIO_HOST=${HOST:-localhost}
+	  validate_host "$MINIO_HOST"
 }
 
 # Check address function
@@ -172,6 +172,9 @@ fi
 # Create directories
 mkdir -p .{minio,mc}/certs
 
+# Delete files if they already exists
+sudo rm -f .{minio,mc}/certs/{public.crt,private.key}
+
 # Formatting address for SAN
 if [[ $MINIO_HOST =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
     SAN_ENTRY="IP:$MINIO_HOST"
@@ -179,17 +182,40 @@ else
     SAN_ENTRY="DNS:$MINIO_HOST, DNS:music.$MINIO_HOST"
 fi
 
+CERT_FILE=".minio/certs/public.crt"
+
 # Create certificate
 echo "Generating certificate for $MINIO_HOST..."
+
+# Check OpenSSL
+function check_openssl() {
+  if ! command -v openssl &>/dev/null; then
+    echo "OpenSSL not found. Please, install it."
+
+    if [[ "$OS" == "LINUX" ]]; then
+      echo "OpenSSL can be installed using: sudo apt install openssl (Ubuntu/Debian) or sudo yum install openssl (CentOS/RHEL)"
+    elif [[ "$OS" == "MAC" ]]; then
+      echo "OpenSSL can be installed using Homebrew: brew install openssl"
+    fi
+
+    return 1
+  fi
+}
+
+check_openssl
+if [ $? -ne 0 ]; then
+  echo "Please try again after installing OpenSSL"
+  exit 1
+fi
+
 openssl req -x509 -nodes \
     -days 365 \
     -newkey rsa:2048 \
     -keyout .minio/certs/private.key \
-    -out .minio/certs/public.crt \
+    -out $CERT_FILE \
     -subj "/CN=$MINIO_HOST" \
     -addext "subjectAltName = $SAN_ENTRY 2>/dev/null"
 
-# shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
     echo "ERROR: Failed to generate certificate"
     exit 1
@@ -197,35 +223,84 @@ fi
 
 cp .minio/certs/* .mc/certs
 
-# Try default password first
 STOREPASS="changeit"
-if ! keytool -list -keystore "$JAVA_CACERTS" -storepass "$STOREPASS" >/dev/null 2>&1; then
+ALIAS="minio_cert_${MINIO_HOST}"
+
+# Find keytool
+function find_keytool() {
+    if command -v keytool &>/dev/null; then
+        echo "$(command -v keytool)"
+    elif [ -x "$JAVA_HOME"/bin/keytool ]; then
+        echo "$JAVA_HOME"/bin/keytool
+    elif [ -x "$JAVA_CACERTS"/../../bin/keytool ]; then
+        echo "$JAVA_CACERTS"/../../bin/keytool
+    else
+        echo ""
+    fi
+}
+
+KEYTOOL=$(find_keytool)
+
+if [ -n "$KEYTOOL" ]; then
+    echo "Using keytool: $KEYTOOL"
+else
+    echo "Keytool not found. Choose variant:"
+    echo "1) Insert path to JDK (not JRE)"
+    echo "2) Install certificate into system certificates"
+    read -rp "Insert 1 or 2: " choice
+
+    if [[ "$choice" == "1" ]]; then
+        read -rp "Insert path to JDK where your-path-to-jdk/bin/keytool is present (ex. /opt/jdk-21): " JDK_PATH
+        if [[ -x $JDK_PATH/bin/keytool ]]; then
+            KEYTOOL=$JDK_PATH/bin/keytool
+            echo "Using keytool from $KEYTOOL"
+        else
+            echo "ERROR: Keytool not found in the JDK"
+            exit 1
+        fi
+    elif [[ "$choice" == "2" ]]; then
+        echo "Add certificate to system trusted certificates..."
+        sudo cp $CERT_FILE /usr/share/ca-certificates/"$ALIAS"
+        sudo update-ca-certificates
+        echo "Certificate successfully added to system certificates"
+        exit 0
+    else
+        echo "ERROR: Invalid choice. Exit."
+        exit 1
+    fi
+fi
+
+# Try default password first
+if ! $KEYTOOL -list -keystore "$JAVA_CACERTS" -storepass "$STOREPASS" >/dev/null 2>&1; then
     echo "Default keystore password did not work"
     while true; do
         read -rsp "Enter keystore password for $JAVA_CACERTS: " STOREPASS
         echo
-        if keytool -list -keystore "$JAVA_CACERTS" -storepass "$STOREPASS" >/dev/null 2>&1; then
+        if $KEYTOOL -list -keystore "$JAVA_CACERTS" -storepass "$STOREPASS" >/dev/null 2>&1; then
             break
         fi
         echo "Invalid password, please try again."
     done
 fi
 
+# Delete alias from keystore if already exists
+if $KEYTOOL -list -keystore "$JAVA_CACERTS" -storepass "$STOREPASS" | grep -q "$ALIAS"; then
+   echo "Alias '$ALIAS' already exists. Deleting it..."
+   sudo "$KEYTOOL" -delete -keystore "$JAVA_CACERTS" -storepass "$STOREPASS" -alias "$ALIAS"
+fi
+
 # Import certificate
 echo "Adding certificate to $JAVA_CACERTS..."
-sudo keytool -importcert -trustcacerts \
+sudo "$KEYTOOL" -importcert -trustcacerts \
     -keystore "$JAVA_CACERTS" \
     -storepass "$STOREPASS" \
-    -alias "minio_cert_${MINIO_HOST}" \
-    -file .minio/certs/public.crt \
+    -alias "$ALIAS" \
+    -file $CERT_FILE \
     -noprompt
 
-# shellcheck disable=SC2181
+
 if [ $? -ne 0 ]; then
     echo "ERROR: Failed to import certificate"
     exit 1
 fi
 
-# Run docker compose
-echo "Starting Docker containers..."
-docker compose up -d
