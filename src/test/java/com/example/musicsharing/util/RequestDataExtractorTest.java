@@ -42,7 +42,7 @@ class RequestDataExtractorTest {
     @Test
     void extractLoginData_ShouldReturnLoginDTO_WhenRequestIsCustomWrapper() throws IOException {
         String requestBody = "{\"username\":\"testUser\",\"password\":\"testPassword\"}";
-        when(requestWrapper.getBody()).thenReturn(requestBody);
+        when(requestWrapper.getBody()).thenReturn(requestBody.getBytes());
 
         JsonNode jsonNode = mock(JsonNode.class);
         JsonNode usernameNode = mock(JsonNode.class);
