@@ -6,9 +6,9 @@ import com.example.musicsharing.repositories.UserRepository;
 import com.example.musicsharing.security.filters.AttemptsLimitFilter;
 import com.example.musicsharing.security.filters.JWTRequestFilter;
 import com.example.musicsharing.services.UserService;
+import com.example.musicsharing.testsecurity.WithCustomUser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -16,7 +16,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.security.Principal;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -45,27 +44,23 @@ class UserControllerTest {
     @MockitoBean
     private UserRepository userRepository;
 
-    @Mock
-    private Principal principal;
-
     @Test
+    @WithCustomUser
     void showUserInfo_shouldReturnUserInfoDto() throws Exception {
         UserInfoDTO userInfoDTO = UserInfoDTO.builder()
-                .username("username")
+                .username("testUser")
                 .email("email")
                 .firstName("firstName")
                 .lastName("lastName")
                 .build();
 
-        String username = "username";
+        String username = "testUser";
         ApiResponse<UserInfoDTO> response = ApiResponse.success(userInfoDTO);
         String expectedJson = objectMapper.writeValueAsString(response);
 
-        when(principal.getName()).thenReturn(username);
         when(userService.showUser(username)).thenReturn(userInfoDTO);
 
         mockMvc.perform(get("/api/users/info")
-                        .principal(principal)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().json(expectedJson))
@@ -98,6 +93,7 @@ class UserControllerTest {
     }
 
     @Test
+    @WithCustomUser
     void updateUserInfo_shouldReturnUserInfoDto() throws Exception {
         UserInfoDTO userInfoDTO = UserInfoDTO.builder()
                 .username("username")
@@ -106,17 +102,15 @@ class UserControllerTest {
                 .lastName("lastName")
                 .build();
 
-        String username = "username";
+        String username = "testUser";
         String requestBody = objectMapper.writeValueAsString(userInfoDTO);
         ApiResponse<UserInfoDTO> response = ApiResponse.success(userInfoDTO);
         String expectedJson = objectMapper.writeValueAsString(response);
 
-        when(principal.getName()).thenReturn(username);
         when(userService.updateUserInfo(eq(username), any(UserInfoDTO.class)))
                 .thenReturn(userInfoDTO);
 
         mockMvc.perform(put("/api/users")
-                        .principal(principal)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isOk())
