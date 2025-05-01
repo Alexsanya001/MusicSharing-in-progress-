@@ -63,11 +63,9 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<String>> restorePassword(
-            @RequestBody @Valid RestorePasswordDto restorePasswordDto,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestBody @Valid RestorePasswordDto restorePasswordDto) {
 
-        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
-        userService.changePassword(restorePasswordDto, token);
+        userService.changePassword(restorePasswordDto);
 
         ApiResponse<String> response = ApiResponse.success(CHANGE_PASSWORD_SUCCESS_MESSAGE);
         return ResponseEntity.ok(response);

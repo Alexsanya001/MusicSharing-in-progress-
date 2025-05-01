@@ -8,9 +8,11 @@ import com.example.musicsharing.security.ResponseWrapper;
 import com.example.musicsharing.util.RequestDataExtractor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ReadListener;
+import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -18,18 +20,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.BufferedReader;
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -57,30 +52,28 @@ class AttemptsLimitFilterTest {
                 .password("password")
                 .build();
         ObjectMapper objectMapper = new ObjectMapper();
-        String requestBody = objectMapper.writeValueAsString(loginDTO);
+        byte[] requestBody = objectMapper.writeValueAsBytes(loginDTO);
 
-        try (BufferedReader reader = new BufferedReader(new StringReader(requestBody))) {
-            when(request.getReader()).thenReturn(reader);
-            when(request.getRequestURI()).thenReturn("/api/auth/login");
-            when(dataExtractor.extractLoginData(any())).thenReturn(loginDTO);
-            when(limitService.isNotAllowed("Username: " + loginDTO.getUsername()))
-                    .thenReturn(true);
+        when(request.getInputStream()).thenReturn(getServletInputStream(requestBody));
+        when(request.getRequestURI()).thenReturn("/api/auth/login");
+        when(dataExtractor.extractLoginData(any())).thenReturn(loginDTO);
+        when(limitService.isNotAllowed("Username: " + loginDTO.getUsername()))
+                .thenReturn(true);
 
-            try (var mockedStatic = mockStatic(ResponseWrapper.class)) {
+        try (var mockedStatic = mockStatic(ResponseWrapper.class)) {
 
-                attemptsLimitFilter.doFilter(request, response, filterChain);
+            attemptsLimitFilter.doFilter(request, response, filterChain);
 
-                verify(limitService).prepareSuspiciousAttempt(any(), eq("Username: " + loginDTO.getUsername()));
+            verify(limitService).prepareSuspiciousAttempt(any(), eq("Username: " + loginDTO.getUsername()));
 
-                ArgumentCaptor<ErrorDetail> captor = ArgumentCaptor.forClass(ErrorDetail.class);
-                mockedStatic.verify(() ->
-                        ResponseWrapper.generateAuthFailureResponse(eq(response), captor.capture()));
-                ErrorDetail errorDetail = captor.getValue();
+            ArgumentCaptor<ErrorDetail> captor = ArgumentCaptor.forClass(ErrorDetail.class);
+            mockedStatic.verify(() ->
+                    ResponseWrapper.generateAuthFailureResponse(eq(response), captor.capture()));
+            ErrorDetail errorDetail = captor.getValue();
 
-                assertEquals("authentication", errorDetail.getField());
-                assertEquals("Too many attempts", errorDetail.getMessage());
-                verifyNoInteractions(filterChain);
-            }
+            assertEquals("authentication", errorDetail.getField());
+            assertEquals("Too many attempts", errorDetail.getMessage());
+            verifyNoInteractions(filterChain);
         }
     }
 
@@ -89,21 +82,47 @@ class AttemptsLimitFilterTest {
     void doFilter_shouldNotBlockRequest_whenLimitNotExceeded() throws Exception {
         RestorePasswordDto restorePasswordDto = RestorePasswordDto.builder().newPassword("NewPassword1").build();
         ObjectMapper objectMapper = new ObjectMapper();
-        String requestBody = objectMapper.writeValueAsString(restorePasswordDto);
         String ipAddress = "127.0.0.1";
 
-        try (BufferedReader reader = new BufferedReader(new StringReader(requestBody))) {
-            when(request.getReader()).thenReturn(reader);
-            when(request.getRequestURI()).thenReturn("/api/auth/reset-password");
-            when(request.getRemoteAddr()).thenReturn(ipAddress);
-            when(limitService.isNotAllowed("IP: " + ipAddress))
-                    .thenReturn(false);
+        byte[] requestBody = objectMapper.writeValueAsBytes(restorePasswordDto);
 
-            attemptsLimitFilter.doFilter(request, response, filterChain);
+        when(request.getInputStream()).thenReturn(getServletInputStream(requestBody));
+        when(request.getRequestURI()).thenReturn("/api/auth/reset-password");
+        when(request.getRemoteAddr()).thenReturn(ipAddress);
+        when(limitService.isNotAllowed("IP: " + ipAddress))
+                .thenReturn(false);
 
-            verify(filterChain).doFilter(any(HttpServletRequest.class), eq(response));
-            verify(limitService, never()).prepareSuspiciousAttempt(any(HttpServletRequest.class), anyString());
-            verifyNoInteractions(response);
-        }
+        attemptsLimitFilter.doFilter(request, response, filterChain);
+
+        verify(filterChain).doFilter(any(HttpServletRequest.class), eq(response));
+        verify(limitService, never()).prepareSuspiciousAttempt(any(HttpServletRequest.class), anyString());
+        verifyNoInteractions(response);
+
+    }
+
+    private static @NotNull ServletInputStream getServletInputStream(byte[] requestBody) {
+        return new ServletInputStream() {
+            private final ByteArrayInputStream inputStream = new ByteArrayInputStream(requestBody);
+
+            @Override
+            public int read() {
+                return inputStream.read();
+            }
+
+            @Override
+            public boolean isFinished() {
+                return inputStream.available() == 0;
+            }
+
+            @Override
+            public boolean isReady() {
+                return true;
+            }
+
+            @Override
+            public void setReadListener(ReadListener listener) {
+                throw new UnsupportedOperationException();
+            }
+        };
     }
 }

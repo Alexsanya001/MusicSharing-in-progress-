@@ -14,15 +14,25 @@ import java.util.List;
 @UtilityClass
 public final class ResponseWrapper {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     public static void generateAuthFailureResponse(HttpServletResponse response, ErrorDetail errorDetail) {
         ApiResponse<?> apiResponse = ApiResponse.failure(List.of(errorDetail));
-        ObjectMapper mapper = new ObjectMapper();
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        generateResponse(response, apiResponse, HttpServletResponse.SC_UNAUTHORIZED);
+    }
+
+    public static void generateAuthSuccessResponse(HttpServletResponse response, String token){
+        ApiResponse<String> apiResponse = ApiResponse.success(token);
+        generateResponse(response, apiResponse, HttpServletResponse.SC_OK);
+    }
+
+    private static void generateResponse(HttpServletResponse response, ApiResponse<?> apiResponse, int statusCode) {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
+        response.setStatus(statusCode);
 
         try (var writer = response.getWriter()) {
-            writer.write(mapper.writeValueAsString(apiResponse));
+            writer.write(MAPPER.writeValueAsString(apiResponse));
             writer.flush();
         } catch (IOException e) {
             log.error(e);

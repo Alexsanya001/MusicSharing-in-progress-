@@ -1,11 +1,12 @@
 package com.example.musicsharing.configs;
 
+import com.example.musicsharing.models.dto.ErrorDetail;
 import com.example.musicsharing.security.CustomAuthenticationFailureHandler;
 import com.example.musicsharing.security.CustomAuthenticationSuccessHandler;
+import com.example.musicsharing.security.ResponseWrapper;
 import com.example.musicsharing.security.filters.AttemptsLimitFilter;
 import com.example.musicsharing.security.filters.CustomUsernamePasswordAuthenticationFilter;
 import com.example.musicsharing.security.filters.JWTRequestFilter;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,11 +14,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -39,14 +40,13 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/register",
+                                "/api/auth/forgot-password",
+                                "/api/auth/validate-token").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.getWriter().write("Unauthorized " + authException.getMessage());
-                        })
+                        .authenticationEntryPoint(authenticationEntryPoint())
                 )
                 .sessionManagement((session) ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -76,6 +76,14 @@ public class SecurityConfig {
                 new CustomUsernamePasswordAuthenticationFilter(authSuccessHandler, authFailureHandler);
         loginFilter.setAuthenticationManager(authManager);
         return loginFilter;
+    }
+
+    @Bean
+    public AuthenticationEntryPoint authenticationEntryPoint() {
+        return (request, response, authException) -> {
+            ErrorDetail error = new ErrorDetail("authorization", "Unauthorized access");
+            ResponseWrapper.generateAuthFailureResponse(response, error);
+        };
     }
 
 }

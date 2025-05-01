@@ -16,7 +16,7 @@ public interface UserService {
 
     void sendRecoveryLink(ForgotPasswordDto forgotPasswordDto);
 
-    void changePassword(RestorePasswordDto request, String token);
+    void changePassword(RestorePasswordDto request);
 
     boolean validateToken(String token);
 

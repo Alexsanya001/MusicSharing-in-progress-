@@ -11,11 +11,13 @@ import com.example.musicsharing.repositories.UserRepository;
 import com.example.musicsharing.services.MailService;
 import com.example.musicsharing.services.UserService;
 import com.example.musicsharing.util.JWTUtil;
+import com.example.musicsharing.util.SecurityUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,7 @@ public class UserServiceImpl implements UserService {
     JWTUtil jwtUtil;
     PasswordEncoder passwordEncoder;
     MailService mailService;
+    StringRedisTemplate redisTemplate;
 
 
     @Value("${jwt-short-exp-time}")
@@ -83,6 +86,8 @@ public class UserServiceImpl implements UserService {
 
         if (user != null) {
             String token = jwtUtil.generateToken(String.valueOf(user.getId()), tokenShortExpTime);
+            String redisKey = "password:reset:user:" + user.getId();
+            redisTemplate.opsForValue().set(redisKey, token, tokenShortExpTime);
             String message = String.format(RESTORE_PASSWORD_MESSAGE, domain, token);
             mailService.sendMail(email, "Restore password", message);
         }
@@ -91,13 +96,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void changePassword(RestorePasswordDto requestBody, String token) {
-        Long id = Long.parseLong(jwtUtil.extractClaim("sub", token));
-        User user = userRepository.findById(id).orElse(null);
-        if (user != null) {
-            user.setPassword(passwordEncoder.encode(requestBody.getNewPassword()));
-            userRepository.save(user);
-        }
+    public void changePassword(RestorePasswordDto requestBody) {
+        User user = SecurityUtils.getCurrentUser().orElseThrow(
+                () -> new UsernameNotFoundException("User not found"));
+        User managedUser = userRepository.getReferenceById(user.getId());
+        managedUser.setPassword(passwordEncoder.encode(requestBody.getNewPassword()));
+        userRepository.save(managedUser);
     }
 
 

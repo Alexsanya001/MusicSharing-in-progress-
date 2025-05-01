@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
 
@@ -45,11 +46,13 @@ class JWTRequestFilterTest {
     UserRepository userRepository;
     @Mock
     AttemptsLimitService attemptsLimitService;
+    @Mock
+    StringRedisTemplate stringRedisTemplate;
 
 
     @BeforeEach
     public void setUp() {
-        jwtRequestFilter = new JWTRequestFilter(jwtUtil, attemptsLimitService, userRepository);
+        jwtRequestFilter = new JWTRequestFilter(jwtUtil, attemptsLimitService, userRepository, stringRedisTemplate);
         SecurityContextHolder.setContext(new SecurityContextImpl());
     }
 

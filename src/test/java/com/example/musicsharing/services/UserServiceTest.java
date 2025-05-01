@@ -9,6 +9,8 @@ import com.example.musicsharing.models.entities.User;
 import com.example.musicsharing.models.mappers.UserMapper;
 import com.example.musicsharing.repositories.UserRepository;
 import com.example.musicsharing.services.impl.UserServiceImpl;
+import com.example.musicsharing.testsecurity.WithCustomUser;
+import com.example.musicsharing.testsecurity.WithCustomUserSecurityContextFactory;
 import com.example.musicsharing.util.JWTUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.test.context.support.WithSecurityContext;
 
 import java.util.List;
 import java.util.Optional;
@@ -62,35 +65,34 @@ class UserServiceTest {
         userService = userServiceImpl;
     }
 
-//    @Test
-//    void createUser_shouldSaveUserAndReturnUserId() {
-//        RegisterDTO registerDTO = RegisterDTO.builder()
-//                .username("username")
-//                .password("password")
-//                .build();
-//
-//        User user = new User();
-//        user.setUsername("username");
-//        user.setPassword("password");
-//        user.setId(1L);
-//
-//        String encodedPassword = "encodedPassword";
-//
-//        when(userMapper.toUser(registerDTO)).thenReturn(user);
-//        when(passwordEncoder.encode(anyString())).thenReturn(encodedPassword);
-//        when(userRepository.save(user)).thenReturn(user);
-//
-//        long userId = userService.createUser(registerDTO);
-//
-//        verify(userRepository).save(userCaptor.capture());
-//        User capturedUser = userCaptor.getValue();
-//
-//        assertEquals("username", capturedUser.getUsername());
-//        assertEquals(encodedPassword, capturedUser.getPassword());
-//        assertEquals(userId, capturedUser.getId());
-//        assertEquals(1L, capturedUser.getId());
-//        assertEquals(Role.ROLE_USER, capturedUser.getRole());
-//    }
+    @Test
+    void createUser_shouldSaveUserAndReturnUserId() {
+        RegisterDTO registerDTO = RegisterDTO.builder()
+                .username("username")
+                .password("password")
+                .build();
+
+        User user = new User();
+        user.setUsername("username");
+        user.setPassword("password");
+
+        String encodedPassword = "encodedPassword";
+
+        when(userMapper.toUser(registerDTO)).thenReturn(user);
+        when(passwordEncoder.encode(anyString())).thenReturn(encodedPassword);
+        when(userRepository.save(user)).thenReturn(user);
+
+        long userId = userService.createUser(registerDTO);
+
+        verify(userRepository).save(userCaptor.capture());
+        User capturedUser = userCaptor.getValue();
+
+        assertEquals("username", capturedUser.getUsername());
+        assertEquals(encodedPassword, capturedUser.getPassword());
+        assertEquals(userId, capturedUser.getId());
+        assertEquals(1L, capturedUser.getId());
+        assertEquals(Role.ROLE_USER, capturedUser.getRole());
+    }
 
 
     @Test
@@ -167,27 +169,27 @@ class UserServiceTest {
     }
 
 
-//    @Test
-//    void changePassword_shouldChangePassword() {
-//        RestorePasswordDto dto = RestorePasswordDto.builder().newPassword("New-password1").build();
-//        String token = "token";
-//        User user = new User();
-//        user.setId(1L);
-//        user.setPassword("Old-password");
-//
-//        when(jwtUtil.extractClaim("sub", token)).thenReturn("1");
-//        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-//        when(passwordEncoder.encode(dto.getNewPassword())).thenReturn("New-password1-encoded");
-//
-//        userService.changePassword(dto, token);
-//
-//        verify(userRepository).save(userCaptor.capture());
-//        User capturedUser = userCaptor.getValue();
-//        assertEquals("New-password1-encoded", capturedUser.getPassword());
-//    }
+    @Test
+    void changePassword_shouldChangePassword() {
+        RestorePasswordDto dto = RestorePasswordDto.builder().newPassword("New-password1").build();
+        String token = "token";
+        User user = new User();
+        user.setPassword("Old-password");
+
+        when(jwtUtil.extractClaim("sub", token)).thenReturn("1");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode(dto.getNewPassword())).thenReturn("New-password1-encoded");
+
+        userService.changePassword(dto);
+
+        verify(userRepository).save(userCaptor.capture());
+        User capturedUser = userCaptor.getValue();
+        assertEquals("New-password1-encoded", capturedUser.getPassword());
+    }
 
 
     @Test
+    @WithCustomUser
     void changePassword_shouldNotChangePassword_whenTokenIsWrong() {
         RestorePasswordDto dto = RestorePasswordDto.builder().newPassword("New-password1").build();
         String token = "token";
@@ -195,7 +197,7 @@ class UserServiceTest {
         when(jwtUtil.extractClaim("sub", token)).thenReturn("1");
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        userService.changePassword(dto, token);
+        userService.changePassword(dto);
 
         verify(passwordEncoder, never()).encode(any());
         verify(userRepository, never()).save(any());

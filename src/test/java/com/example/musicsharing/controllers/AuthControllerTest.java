@@ -195,7 +195,7 @@ class AuthControllerTest {
         String requestBody = objectMapper.writeValueAsString(restorePasswordDto);
         String token = "token";
         String header = "Bearer " + token;
-        doNothing().when(userService).changePassword(restorePasswordDto, token);
+        doNothing().when(userService).changePassword(restorePasswordDto);
 
         mockMvc.perform(post("/api/auth/reset-password")
                         .header("Authorization", header)
@@ -204,6 +204,6 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value(AuthController.CHANGE_PASSWORD_SUCCESS_MESSAGE));
 
-        verify(userService).changePassword(any(RestorePasswordDto.class), eq(token));
+        verify(userService).changePassword(any(RestorePasswordDto.class));
     }
 }

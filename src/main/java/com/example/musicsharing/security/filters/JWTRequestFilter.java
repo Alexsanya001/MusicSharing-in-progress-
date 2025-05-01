@@ -20,6 +20,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -38,14 +39,13 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class JWTRequestFilter extends OncePerRequestFilter {
 
-    //@TODO One good filter instead two bad
-
     JWTUtil jwtUtil;
     AttemptsLimitService attemptsLimitService;
     UserRepository userRepository;
+    StringRedisTemplate redisTemplate;
 
     static String JWT_EXPIRED_MESSAGE = "Token is expired.";
-    static String JWT_INVALID_MESSAGE = "Token is invalid.";
+    static String JWT_INVALID_MESSAGE = "Token is invalid or already used.";
 
     @Override
     public void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -61,6 +61,8 @@ public class JWTRequestFilter extends OncePerRequestFilter {
             try {
                 if (uri.endsWith("reset-password")) {
                     doFilterOnResetPassword(jwtToken);
+                    filterChain.doFilter(request, response);
+                    return;
                 } else {
                     doRegularFilter(jwtToken);
                 }
@@ -97,11 +99,21 @@ public class JWTRequestFilter extends OncePerRequestFilter {
     private void doFilterOnResetPassword(String jwtToken) {
         String subject = jwtUtil.extractClaim("sub", jwtToken);
         Long userId = Long.parseLong(subject);
+        String key = "password:reset:user:" + userId;
+        String storedToken = redisTemplate.opsForValue().get(key);
+
+        if (!jwtToken.equals(storedToken)) {
+            throw new JwtException("Invalid JWT");
+        }
+
+        redisTemplate.delete(key);
+
         UsernamePasswordAuthenticationToken authToken;
         try {
             User user = userRepository.findById(userId).orElseThrow(EntityNotFoundException::new);
             authToken = new UsernamePasswordAuthenticationToken(
-                    user.getUsername(), null,
+                    new CustomUserDetails(user),
+                    null,
                     Collections.singleton(new SimpleGrantedAuthority(user.getRole().name()))
             );
         } catch (EntityNotFoundException e) {
@@ -119,12 +131,12 @@ public class JWTRequestFilter extends OncePerRequestFilter {
                 );
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
-            UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     new CustomUserDetails(user),
                     null,
                     Collections.singleton(new SimpleGrantedAuthority(user.getRole().name()))
             );
-            SecurityContextHolder.getContext().setAuthentication(token);
+            SecurityContextHolder.getContext().setAuthentication(authToken);
         }
     }
 }

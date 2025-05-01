@@ -1,8 +1,6 @@
 package com.example.musicsharing.security;
 
-import com.example.musicsharing.models.dto.ApiResponse;
 import com.example.musicsharing.util.JWTUtil;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
@@ -24,7 +22,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
-    ObjectMapper objectMapper;
     JWTUtil jwtUtil;
     AttemptsLimitService attemptsLimitService;
 
@@ -39,13 +36,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         CustomUserDetails user = (CustomUserDetails) authentication.getPrincipal();
         String token = generateToken(user);
-        ApiResponse<String> responseBody = ApiResponse.success(token);
-
-        response.setStatus(HttpServletResponse.SC_OK);
-        response.setContentType("application/json");
-        response.getWriter().write(objectMapper.writeValueAsString(responseBody));
-        response.getWriter().flush();
-
+        ResponseWrapper.generateAuthSuccessResponse(response, token);
         attemptsLimitService.discardLoginAttempts(
                 String.format(IDENTIFIER_PREFIX, user.getUsername())
         );
