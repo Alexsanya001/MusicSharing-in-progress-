@@ -1,0 +1,71 @@
+spring:
+  application:
+    name: MusicSharing
+
+  config:
+    import: classpath:validation.properties, classpath:s3.yml
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${DB_URL}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+
+  flyway:
+    placeholders:
+      admin_password: ${ADMIN_PASSWORD}
+      admin_email: ${ADMIN_EMAIL}
+
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USER}
+    password: ${MAIL_PASSWORD}
+    properties:
+      sender: ${MAIL_SENDER}
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 100MB
+
+server:
+  tomcat:
+    max-swallow-size: -1
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+  exp-time:
+    long: ${JWT_EXP_TIME}
+    short: ${JWT_SHORT_EXP_TIME}
+
+domain: ${DOMAIN_NAME}
+admin.email: ${ADMIN_EMAIL}
+
+logging:
+  level:
+    org.springframework: debug
+    org.hibernate.sql: error
+    com.example.musicsharing: debug
+    com.example.musicsharing.security: trace
+  pattern:
+    console: '%d{HH-mm-ss} [%thread] %highlight(%-5level) %cyan(%logger{36}) - %msg%n%red(%ex)'
+    file: '%d{yy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n%ex'
+  file:
+    name: logs/app.log

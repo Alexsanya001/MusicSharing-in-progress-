@@ -40,7 +40,7 @@ public class UserServiceImpl implements UserService {
     StringRedisTemplate redisTemplate;
 
 
-    @Value("${jwt-short-exp-time}")
+    @Value("${jwt.exp-time.short}")
     @NonFinal
     Duration tokenShortExpTime;
 

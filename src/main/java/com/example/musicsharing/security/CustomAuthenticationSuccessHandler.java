@@ -24,7 +24,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     JWTUtil jwtUtil;
     AttemptsLimitService attemptsLimitService;
 
-    @Value("${jwt-exp-time}")
+    @Value("${jwt.exp-time.long}")
     @NonFinal
     Duration tokenExpTime;
 

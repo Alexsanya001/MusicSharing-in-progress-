@@ -15,7 +15,7 @@ import java.util.Map;
 @Component
 public class JWTUtil {
 
-    @Value("${jwt-secret-key}")
+    @Value("${jwt.secret-key}")
     private String secret;
     private SecretKey key;
 
