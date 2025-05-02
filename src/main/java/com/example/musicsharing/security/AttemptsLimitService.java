@@ -1,6 +1,5 @@
 package com.example.musicsharing.security;
 
-import com.example.musicsharing.util.RequestDataExtractor;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -20,11 +19,9 @@ public class AttemptsLimitService {
     static int MAX_ATTEMPTS = 5;
     static Duration TIMEOUT = Duration.ofMinutes(5);
     static String RECORD_PREFIX = "Authentication failure | ";
-    static String USERID_PREFIX = "UserId: %s | %s";
     static String IP_PREFIX = " | IP: ";
 
     StringRedisTemplate redisTemplate;
-    RequestDataExtractor extractor;
     ApplicationEventPublisher eventPublisher;
 
 
@@ -51,13 +48,8 @@ public class AttemptsLimitService {
 
     @Async
     public void prepareSuspiciousAttempt(HttpServletRequest request, String identifier) {
-        if (identifier.startsWith("Username")) {
-            String ipAddress = request.getRemoteAddr();
-            identifier += IP_PREFIX + ipAddress;
-        } else {
-            String userId = extractor.extractUserId(request);
-            identifier = String.format(USERID_PREFIX, userId, identifier);
-        }
+        String ipAddress = request.getRemoteAddr();
+        identifier += IP_PREFIX + ipAddress;
         eventPublisher.publishEvent(new SuspiciousAttemptEvent(identifier));
     }
 }

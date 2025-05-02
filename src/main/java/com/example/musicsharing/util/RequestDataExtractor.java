@@ -4,7 +4,9 @@ import com.example.musicsharing.models.dto.LoginDTO;
 import com.example.musicsharing.security.CustomHttpServletRequestWrapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.PrematureJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -48,8 +50,10 @@ public class RequestDataExtractor {
         if (token != null) {
             try {
                 userId = jwtUtil.extractClaim("sub", token);
-            } catch (JwtException e) {
-                log.error(e.getMessage());
+            } catch (ExpiredJwtException | PrematureJwtException ee){
+                return ee.getClaims().getSubject();
+            } catch (JwtException je) {
+                log.error(je.getMessage());
             }
         }
         return userId;

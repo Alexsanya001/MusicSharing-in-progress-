@@ -53,8 +53,8 @@ public class AttemptsLimitFilter implements Filter {
                         yield String.format("Username: %s", loginDTO.getUsername());
                     }
                     case "/reset-password" -> {
-                        String ipAddress = request.getRemoteAddr();
-                        yield String.format("IP: %s", ipAddress);
+                        String userId = requestDataExtractor.extractUserId(requestWrapper);
+                        yield String.format("UserId: %s", userId);
                     }
                     default -> throw new IllegalStateException("Unexpected value: " + uri);
                 };

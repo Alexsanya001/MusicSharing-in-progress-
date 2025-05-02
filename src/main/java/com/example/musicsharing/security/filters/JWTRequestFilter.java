@@ -7,6 +7,7 @@ import com.example.musicsharing.security.AttemptsLimitService;
 import com.example.musicsharing.security.CustomUserDetails;
 import com.example.musicsharing.security.ResponseWrapper;
 import com.example.musicsharing.util.JWTUtil;
+import com.example.musicsharing.util.RequestDataExtractor;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -43,6 +44,7 @@ public class JWTRequestFilter extends OncePerRequestFilter {
     AttemptsLimitService attemptsLimitService;
     UserRepository userRepository;
     StringRedisTemplate redisTemplate;
+    RequestDataExtractor requestDataExtractor;
 
     static String JWT_EXPIRED_MESSAGE = "Token is expired.";
     static String JWT_INVALID_MESSAGE = "Token is invalid or already used.";
@@ -89,9 +91,8 @@ public class JWTRequestFilter extends OncePerRequestFilter {
 
     private void catchFailureAttempt(HttpServletRequest request) {
         if (request.getRequestURI().contains("/reset-password")) {
-            String ipAddress = request.getRemoteAddr();
-            String identifier = "IP: " + ipAddress;
-            attemptsLimitService.incrementLoginAttempts(identifier);
+            String userId = requestDataExtractor.extractUserId(request);
+            attemptsLimitService.incrementLoginAttempts("UserId: " + userId);
         }
     }
 
