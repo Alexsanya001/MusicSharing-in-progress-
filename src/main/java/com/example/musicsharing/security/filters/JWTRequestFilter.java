@@ -99,27 +99,21 @@ public class JWTRequestFilter extends OncePerRequestFilter {
     private void doFilterOnResetPassword(String jwtToken) {
         String subject = jwtUtil.extractClaim("sub", jwtToken);
         Long userId = Long.parseLong(subject);
-        String key = "password:reset:user:" + userId;
-        String storedToken = redisTemplate.opsForValue().get(key);
+        String redisKey = "password:reset:user:" + userId;
+        String storedToken = redisTemplate.opsForValue().get(redisKey);
 
         if (!jwtToken.equals(storedToken)) {
             throw new JwtException("Invalid JWT");
         }
 
-        redisTemplate.delete(key);
+        redisTemplate.delete(redisKey);
 
-        UsernamePasswordAuthenticationToken authToken;
         try {
             User user = userRepository.findById(userId).orElseThrow(EntityNotFoundException::new);
-            authToken = new UsernamePasswordAuthenticationToken(
-                    new CustomUserDetails(user),
-                    null,
-                    Collections.singleton(new SimpleGrantedAuthority(user.getRole().name()))
-            );
+            authenticateUser(user);
         } catch (EntityNotFoundException e) {
             throw new MalformedJwtException(JWT_INVALID_MESSAGE);
         }
-        SecurityContextHolder.getContext().setAuthentication(authToken);
     }
 
 
@@ -131,12 +125,16 @@ public class JWTRequestFilter extends OncePerRequestFilter {
                 );
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
-            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                    new CustomUserDetails(user),
-                    null,
-                    Collections.singleton(new SimpleGrantedAuthority(user.getRole().name()))
-            );
-            SecurityContextHolder.getContext().setAuthentication(authToken);
+            authenticateUser(user);
         }
+    }
+
+    private void authenticateUser(User user){
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                new CustomUserDetails(user),
+                null,
+                Collections.singleton(new SimpleGrantedAuthority(user.getRole().name()))
+        );
+        SecurityContextHolder.getContext().setAuthentication(authToken);
     }
 }

@@ -34,10 +34,4 @@ public class MusicController {
         return ResponseEntity.ok(response);
     }
 
-//    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    public ResponseEntity<String> upload(
-//            @RequestPart("file") MultipartFile file) throws IOException {
-//        storageService.uploadFile(file.getOriginalFilename(), file.getInputStream(), file.getSize());
-//        return ResponseEntity.ok("ok");
-//    }
 }

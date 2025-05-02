@@ -55,6 +55,7 @@ public class AuthController {
 
     @PostMapping("/validate-token")
     public ResponseEntity<ApiResponse<Boolean>> validateToken(@RequestParam String token) {
+
         Boolean isValid = userService.validateToken(token);
         ApiResponse<Boolean> response = ApiResponse.success(isValid);
         return ResponseEntity.ok(response);
@@ -66,7 +67,6 @@ public class AuthController {
             @RequestBody @Valid RestorePasswordDto restorePasswordDto) {
 
         userService.changePassword(restorePasswordDto);
-
         ApiResponse<String> response = ApiResponse.success(CHANGE_PASSWORD_SUCCESS_MESSAGE);
         return ResponseEntity.ok(response);
     }
