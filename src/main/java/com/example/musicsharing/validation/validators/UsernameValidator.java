@@ -1,6 +1,5 @@
 package com.example.musicsharing.validation.validators;
 
-import com.example.musicsharing.models.entities.User;
 import com.example.musicsharing.repositories.UserRepository;
 import com.example.musicsharing.validation.annotations.ValidUsername;
 import jakarta.validation.ConstraintValidatorContext;
@@ -38,8 +37,8 @@ public class UsernameValidator extends BasicValidator<ValidUsername> {
             return false;
         }
 
-        User storedUser = userRepository.findByUsername(value).orElse(null);
-        if (storedUser != null && isDuplicate(storedUser)) {
+        Long storedUserId = userRepository.findUserIdByUsername(value).orElse(null);
+        if (storedUserId != null && isDuplicate(storedUserId)) {
                 context.buildConstraintViolationWithTemplate(uniqueMessage).addConstraintViolation();
                 return false;
             }

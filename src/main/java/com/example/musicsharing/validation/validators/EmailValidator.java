@@ -40,8 +40,8 @@ public class EmailValidator extends BasicValidator<ValidEmail> {
             return false;
         }
 
-        User storedUser = userRepository.findByEmail(value.toLowerCase()).orElse(null);
-        if (storedUser != null && isDuplicate(storedUser)) {
+        Long storedUserId = userRepository.findUserIdByEmail(value.toLowerCase()).orElse(null);
+        if (storedUserId != null && isDuplicate(storedUserId)) {
                 context.buildConstraintViolationWithTemplate(uniqueMessageValue).addConstraintViolation();
                 return false;
             }

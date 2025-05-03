@@ -4,10 +4,10 @@ import com.example.musicsharing.models.entities.User;
 import com.example.musicsharing.util.SecurityUtils;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 
 import java.lang.annotation.Annotation;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 public abstract class BasicValidator<A extends Annotation> implements ConstraintValidator<A, String> {
@@ -31,8 +31,8 @@ public abstract class BasicValidator<A extends Annotation> implements Constraint
     }
 
 
-    protected static boolean isDuplicate(User storedUser) {
-        String currentUser = SecurityUtils.getCurrentUser().map(User::getUsername).orElse(null);
-        return !storedUser.getUsername().equals(currentUser);
+    protected static boolean isDuplicate(Long storedUserId) {
+        Long currentUserId = SecurityUtils.getCurrentUser().map(User::getId).orElse(null);
+        return !storedUserId.equals(currentUserId);
     }
 }
