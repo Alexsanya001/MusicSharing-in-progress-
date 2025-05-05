@@ -10,7 +10,7 @@ import java.util.List;
 public interface UserService {
     long createUser(RegisterDTO registerDTO);
 
-    UserInfoDTO showUser(String username);
+    UserInfoDTO showUserInfo();
 
     List<UserInfoDTO> getAllUsers();
 

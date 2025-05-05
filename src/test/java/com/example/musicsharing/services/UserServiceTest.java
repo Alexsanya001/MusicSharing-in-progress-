@@ -108,7 +108,7 @@ class UserServiceTest {
                 .thenReturn(Optional.of(user));
         when(userMapper.toUserInfoDTO(user)).thenReturn(userInfoDTO);
 
-        UserInfoDTO expected = userService.showUser("username");
+        UserInfoDTO expected = userService.showUserInfo();
         assertEquals(expected, userInfoDTO);
     }
 
@@ -117,7 +117,7 @@ class UserServiceTest {
     void showUser_shouldThrowUsernameNotFoundException() {
         when(userRepository.findByUsername(anyString()))
                 .thenReturn(Optional.empty());
-        assertThrows(UsernameNotFoundException.class, () -> userService.showUser("username"));
+        assertThrows(UsernameNotFoundException.class, () -> userService.showUserInfo());
     }
 
 

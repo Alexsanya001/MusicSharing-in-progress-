@@ -54,11 +54,10 @@ class UserControllerTest {
                 .lastName("lastName")
                 .build();
 
-        String username = "testUser";
         ApiResponse<UserInfoDTO> response = ApiResponse.success(userInfoDTO);
         String expectedJson = objectMapper.writeValueAsString(response);
 
-        when(userService.showUser(username)).thenReturn(userInfoDTO);
+        when(userService.showUserInfo()).thenReturn(userInfoDTO);
 
         mockMvc.perform(get("/api/users/info")
                         .contentType(MediaType.APPLICATION_JSON))

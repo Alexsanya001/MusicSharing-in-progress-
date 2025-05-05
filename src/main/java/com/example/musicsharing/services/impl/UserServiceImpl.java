@@ -18,12 +18,13 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 
@@ -67,9 +68,10 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public UserInfoDTO showUser(String username) {
-        User user = findByUsername(username);
-        return userMapper.toUserInfoDTO(user);
+    public UserInfoDTO showUserInfo() {
+        Long currentUserId = getCurrentUser().getId();
+        User toShow = userRepository.findById(currentUserId).orElseThrow();
+        return userMapper.toUserInfoDTO(toShow);
     }
 
 
@@ -97,10 +99,10 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void changePassword(RestorePasswordDto requestBody) {
-        User user = SecurityUtils.getCurrentUser().orElseThrow(
-                () -> new UsernameNotFoundException("User not found"));
+        User user = getCurrentUser();
         User managedUser = userRepository.getReferenceById(user.getId());
         managedUser.setPassword(passwordEncoder.encode(requestBody.getNewPassword()));
+        managedUser.setPasswordChangedAt(Instant.now());
         userRepository.save(managedUser);
     }
 
@@ -114,19 +116,18 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserInfoDTO updateUserInfo(String username, UserInfoDTO updateUserDto) {
-        User user = findByUsername(username);
-        user.setUsername(updateUserDto.getUsername());
-        user.setEmail(updateUserDto.getEmail());
-        user.setFirstName(updateUserDto.getFirstName());
-        user.setLastName(updateUserDto.getLastName());
-        User updatedUser = userRepository.save(user);
+        User user = getCurrentUser();
+        User managedUser = userRepository.getReferenceById(user.getId());
+        managedUser.setUsername(updateUserDto.getUsername());
+        managedUser.setEmail(updateUserDto.getEmail());
+        managedUser.setFirstName(updateUserDto.getFirstName());
+        managedUser.setLastName(updateUserDto.getLastName());
+        User updatedUser = userRepository.save(managedUser);
         return userMapper.toUserInfoDTO(updatedUser);
     }
 
-
-    private User findByUsername(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException(
-                        String.format("User '%s' not found", username)));
+    private User getCurrentUser() {
+        return SecurityUtils.getCurrentUser().orElseThrow(
+                () -> new AuthenticationException("User not authenticated") {});
     }
 }

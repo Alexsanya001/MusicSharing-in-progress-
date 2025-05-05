@@ -1,19 +1,6 @@
 package com.example.musicsharing.models.entities;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -21,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.Instant;
 import java.util.Set;
 
 @Entity
@@ -29,7 +17,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = {"password", "createdTracks", "purchasedTracks"})
+@ToString(exclude = {"password", "createdTracks", "purchasedTracks", "passwordChangedAt"})
 public class User {
 
     @Id
@@ -51,6 +39,9 @@ public class User {
 
     private String lastName;
 
+    @Column(name = "password_changed_at", nullable = false)
+    private Instant passwordChangedAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
@@ -67,4 +58,11 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "music_id")
     )
     private Set<Music> purchasedTracks;
+
+    @PrePersist
+    private void prePersist() {
+        if (passwordChangedAt == null) {
+            passwordChangedAt = Instant.now();
+        }
+    }
 }

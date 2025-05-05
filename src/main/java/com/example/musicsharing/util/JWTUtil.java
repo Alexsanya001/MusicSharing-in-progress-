@@ -56,6 +56,18 @@ public class JWTUtil {
                 .get(claim, String.class);
     }
 
+    public Instant getIssuedAt(String token) {
+        initKey();
+
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getIssuedAt()
+                .toInstant();
+    }
+
 
     public boolean isTokenValid(String token) {
         initKey();

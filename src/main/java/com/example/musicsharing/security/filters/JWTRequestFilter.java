@@ -31,6 +31,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 
 @Slf4j
@@ -56,21 +57,15 @@ public class JWTRequestFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
 
         if (header != null && header.startsWith("Bearer ")) {
-
-            String uri = request.getRequestURI();
             String jwtToken = header.substring(7);
-
             try {
-                if (uri.endsWith("reset-password")) {
+                if (request.getRequestURI().endsWith("reset-password")) {
                     doFilterOnResetPassword(jwtToken);
-                    filterChain.doFilter(request, response);
-                    return;
                 } else {
                     doRegularFilter(jwtToken);
                 }
             } catch (JwtException ex) {
-                catchFailureAttempt(request);
-                handleJwtException(response, ex);
+                handleJwtException(request, response, ex);
                 return;
             }
         }
@@ -78,45 +73,30 @@ public class JWTRequestFilter extends OncePerRequestFilter {
     }
 
 
-    private static void handleJwtException(HttpServletResponse response, JwtException ex) {
-        ErrorDetail errorDetail = new ErrorDetail("token", null);
-        if (ex instanceof ExpiredJwtException) {
-            errorDetail.setMessage(JWT_EXPIRED_MESSAGE);
-        } else {
-            errorDetail.setMessage(JWT_INVALID_MESSAGE);
-        }
-        ResponseWrapper.generateAuthFailureResponse(response, errorDetail);
-    }
-
-
-    private void catchFailureAttempt(HttpServletRequest request) {
-        if (request.getRequestURI().contains("/reset-password")) {
-            String userId = requestDataExtractor.extractUserId(request);
-            attemptsLimitService.incrementLoginAttempts("UserId: " + userId);
-        }
-    }
-
-
     private void doFilterOnResetPassword(String jwtToken) {
         String subject = jwtUtil.extractClaim("sub", jwtToken);
-        Long userId = Long.parseLong(subject);
+        Long userId;
+        try {
+             userId = Long.parseLong(subject);
+        } catch (NumberFormatException e) {
+            throw new MalformedJwtException("Invalid JWT subject format");
+        }
         String redisKey = "password:reset:user:" + userId;
         String storedToken = redisTemplate.opsForValue().get(redisKey);
 
         if (!jwtToken.equals(storedToken)) {
             throw new JwtException("Invalid JWT");
         }
-
         redisTemplate.delete(redisKey);
 
         try {
             User user = userRepository.findById(userId).orElseThrow(EntityNotFoundException::new);
             authenticateUser(user);
         } catch (EntityNotFoundException e) {
+            log.error("Username for userId {} from token {} not found", userId, jwtToken);
             throw new MalformedJwtException(JWT_INVALID_MESSAGE);
         }
     }
-
 
     private void doRegularFilter(String jwtToken) {
         String username = jwtUtil.extractClaim("username", jwtToken);
@@ -124,9 +104,20 @@ public class JWTRequestFilter extends OncePerRequestFilter {
                 .orElseThrow(
                         () -> new MalformedJwtException("Jwt token with unknown username " + username)
                 );
+
+        validateTokenIssuedAt(jwtToken, user);
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
             authenticateUser(user);
+        }
+    }
+
+    private void validateTokenIssuedAt(String jwtToken, User user) {
+        Instant passwordChangedAt = user.getPasswordChangedAt();
+        Instant tokenIssuedAt = jwtUtil.getIssuedAt(jwtToken);
+        if (tokenIssuedAt.isBefore(passwordChangedAt)){
+            throw new ExpiredJwtException(null, null, "Password changed after token issued");
         }
     }
 
@@ -137,5 +128,23 @@ public class JWTRequestFilter extends OncePerRequestFilter {
                 Collections.singleton(new SimpleGrantedAuthority(user.getRole().name()))
         );
         SecurityContextHolder.getContext().setAuthentication(authToken);
+    }
+
+    private void handleJwtException(HttpServletRequest request, HttpServletResponse response, JwtException ex) {
+        catchFailureAttempt(request);
+        ErrorDetail errorDetail = new ErrorDetail("token", null);
+        if (ex instanceof ExpiredJwtException) {
+            errorDetail.setMessage(JWT_EXPIRED_MESSAGE);
+        } else {
+            errorDetail.setMessage(JWT_INVALID_MESSAGE);
+        }
+        ResponseWrapper.generateAuthFailureResponse(response, errorDetail);
+    }
+
+    private void catchFailureAttempt(HttpServletRequest request) {
+        if (request.getRequestURI().contains("/reset-password")) {
+            String userId = requestDataExtractor.extractUserId(request);
+            attemptsLimitService.incrementLoginAttempts("UserId: " + userId);
+        }
     }
 }

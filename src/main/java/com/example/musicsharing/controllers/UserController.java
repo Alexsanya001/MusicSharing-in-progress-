@@ -7,15 +7,8 @@ import com.example.musicsharing.services.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
@@ -24,19 +17,10 @@ public class UserController {
 
     private final UserService userService;
 
-    @GetMapping("/info")
-    public ResponseEntity<ApiResponse<UserInfoDTO>> showUserInfo(@AuthenticationPrincipal CustomUserDetails principal) {
-        UserInfoDTO userInfoDTO = userService.showUser(principal.getName());
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse<UserInfoDTO>> showUserInfo() {
+        UserInfoDTO userInfoDTO = userService.showUserInfo();
         ApiResponse<UserInfoDTO> response = ApiResponse.success(userInfoDTO);
-        return ResponseEntity.ok(response);
-    }
-
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<UserInfoDTO>>> getAllUsers() {
-        List<UserInfoDTO> users = userService.getAllUsers();
-        ApiResponse<List<UserInfoDTO>> response = ApiResponse.success(users);
         return ResponseEntity.ok(response);
     }
 

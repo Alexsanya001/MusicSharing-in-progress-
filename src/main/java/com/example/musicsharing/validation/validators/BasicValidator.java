@@ -4,10 +4,8 @@ import com.example.musicsharing.models.entities.User;
 import com.example.musicsharing.util.SecurityUtils;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 
 import java.lang.annotation.Annotation;
-import java.util.Objects;
 import java.util.regex.Pattern;
 
 public abstract class BasicValidator<A extends Annotation> implements ConstraintValidator<A, String> {

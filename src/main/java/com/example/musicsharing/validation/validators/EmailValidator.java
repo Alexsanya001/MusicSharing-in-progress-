@@ -1,6 +1,5 @@
 package com.example.musicsharing.validation.validators;
 
-import com.example.musicsharing.models.entities.User;
 import com.example.musicsharing.repositories.UserRepository;
 import com.example.musicsharing.validation.annotations.ValidEmail;
 import jakarta.validation.ConstraintValidatorContext;
