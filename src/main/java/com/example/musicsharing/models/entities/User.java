@@ -1,5 +1,7 @@
 package com.example.musicsharing.models.entities;
 
+import com.example.musicsharing.cache.CacheKey;
+import com.example.musicsharing.cache.EnableCache;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -18,6 +20,7 @@ import java.util.Set;
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(exclude = {"password", "createdTracks", "purchasedTracks", "passwordChangedAt"})
+@EnableCache
 public class User {
 
     @Id
@@ -27,6 +30,7 @@ public class User {
     private long id;
 
     @Column(nullable = false, unique = true)
+    @CacheKey
     private String username;
 
     @Column(nullable = false)

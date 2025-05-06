@@ -1,0 +1,22 @@
+package com.example.musicsharing.cache;
+
+import org.springframework.stereotype.Component;
+
+@Component
+public class RedisCacheProvider implements CacheProvider {
+
+    @Override
+    public <K, V> V get(K key, Class<V> type) {
+        return null;
+    }
+
+    @Override
+    public <K, V> void put(K key, V value) {
+
+    }
+
+    @Override
+    public <K> void evict(K key, Class<?> type) {
+
+    }
+}
