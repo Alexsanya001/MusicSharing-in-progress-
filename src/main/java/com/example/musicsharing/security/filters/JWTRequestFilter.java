@@ -1,5 +1,6 @@
 package com.example.musicsharing.security.filters;
 
+import com.example.musicsharing.cache.CacheService;
 import com.example.musicsharing.models.dto.ErrorDetail;
 import com.example.musicsharing.models.entities.User;
 import com.example.musicsharing.repositories.UserRepository;
@@ -46,6 +47,7 @@ public class JWTRequestFilter extends OncePerRequestFilter {
     UserRepository userRepository;
     StringRedisTemplate redisTemplate;
     RequestDataExtractor requestDataExtractor;
+    CacheService cacheService;
 
     static String JWT_EXPIRED_MESSAGE = "Token is expired.";
     static String JWT_INVALID_MESSAGE = "Token is invalid or already used.";
@@ -100,10 +102,10 @@ public class JWTRequestFilter extends OncePerRequestFilter {
 
     private void doRegularFilter(String jwtToken) {
         String username = jwtUtil.extractClaim("username", jwtToken);
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(
-                        () -> new MalformedJwtException("Jwt token with unknown username " + username)
-                );
+        User user = cacheService.get(username, User.class);
+        if (user == null) {
+            throw new MalformedJwtException(JWT_INVALID_MESSAGE);
+        }
 
         validateTokenIssuedAt(jwtToken, user);
 

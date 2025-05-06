@@ -1,7 +1,7 @@
 package com.example.musicsharing.models.entities;
 
-import com.example.musicsharing.cache.CacheKey;
-import com.example.musicsharing.cache.EnableCache;
+import com.example.musicsharing.cache.annotations.CacheKey;
+import com.example.musicsharing.cache.annotations.EnableCache;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;

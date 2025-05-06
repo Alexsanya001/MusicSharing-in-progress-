@@ -1,4 +1,4 @@
-package com.example.musicsharing.cache;
+package com.example.musicsharing.cache.providers;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

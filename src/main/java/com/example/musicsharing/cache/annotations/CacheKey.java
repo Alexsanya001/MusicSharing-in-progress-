@@ -1,4 +1,4 @@
-package com.example.musicsharing.cache;
+package com.example.musicsharing.cache.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -1,5 +1,7 @@
-package com.example.musicsharing.cache;
+package com.example.musicsharing.cache.conf;
 
+import com.example.musicsharing.cache.props.CacheProperties;
+import com.example.musicsharing.cache.providers.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

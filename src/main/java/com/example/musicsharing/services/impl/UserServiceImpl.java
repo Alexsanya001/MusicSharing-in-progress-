@@ -1,5 +1,6 @@
 package com.example.musicsharing.services.impl;
 
+import com.example.musicsharing.cache.CacheService;
 import com.example.musicsharing.models.dto.ForgotPasswordDto;
 import com.example.musicsharing.models.dto.RegisterDTO;
 import com.example.musicsharing.models.dto.RestorePasswordDto;
@@ -39,6 +40,7 @@ public class UserServiceImpl implements UserService {
     PasswordEncoder passwordEncoder;
     MailService mailService;
     StringRedisTemplate redisTemplate;
+    CacheService cacheService;
 
 
     @Value("${jwt.exp-time.short}")
@@ -69,8 +71,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserInfoDTO showUserInfo() {
-        Long currentUserId = getCurrentUser().getId();
-        User toShow = userRepository.findById(currentUserId).orElseThrow();
+        User toShow = cacheService.get(getCurrentUser().getUsername(), User.class);
         return userMapper.toUserInfoDTO(toShow);
     }
 
@@ -117,12 +118,15 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserInfoDTO updateUserInfo(String username, UserInfoDTO updateUserDto) {
         User user = getCurrentUser();
+
         User managedUser = userRepository.getReferenceById(user.getId());
         managedUser.setUsername(updateUserDto.getUsername());
         managedUser.setEmail(updateUserDto.getEmail());
         managedUser.setFirstName(updateUserDto.getFirstName());
         managedUser.setLastName(updateUserDto.getLastName());
         User updatedUser = userRepository.save(managedUser);
+
+        cacheService.put(updatedUser.getUsername(), updatedUser);
         return userMapper.toUserInfoDTO(updatedUser);
     }
 

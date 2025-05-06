@@ -1,7 +1,9 @@
 package com.example.musicsharing.security;
 
+import com.example.musicsharing.cache.CacheService;
 import com.example.musicsharing.models.dto.ErrorDetail;
 import com.example.musicsharing.models.dto.LoginDTO;
+import com.example.musicsharing.models.entities.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;

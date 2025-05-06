@@ -1,8 +1,10 @@
 package com.example.musicsharing.security.filters;
 
+import com.example.musicsharing.cache.CacheService;
 import com.example.musicsharing.repositories.UserRepository;
 import com.example.musicsharing.security.AttemptsLimitService;
 import com.example.musicsharing.util.JWTUtil;
+import com.example.musicsharing.util.RequestDataExtractor;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.FilterChain;
@@ -11,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -32,8 +35,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class JWTRequestFilterTest {
 
-    private JWTRequestFilter jwtRequestFilter;
-
     @Mock
     private HttpServletRequest request;
     @Mock
@@ -48,11 +49,17 @@ class JWTRequestFilterTest {
     AttemptsLimitService attemptsLimitService;
     @Mock
     StringRedisTemplate stringRedisTemplate;
+    @Mock
+    RequestDataExtractor requestDataExtractor;
+    @Mock
+    CacheService cacheService;
+
+    @InjectMocks
+    private JWTRequestFilter jwtRequestFilter;
 
 
     @BeforeEach
     public void setUp() {
-        jwtRequestFilter = new JWTRequestFilter(jwtUtil, attemptsLimitService, userRepository, stringRedisTemplate);
         SecurityContextHolder.setContext(new SecurityContextImpl());
     }
 
