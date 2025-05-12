@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 
 @Service             // @TODO Final class in prod after AOP logging disabled
-@ConditionalOnProperty(prefix = "storage",name = "provider", havingValue = "minio", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "storage", name = "provider", havingValue = "minio", matchIfMissing = true)
 public class MinioStorageService extends AbstractS3StorageService {
 
     public MinioStorageService(@Value("${storage.minio.endpoint}") String endpoint,

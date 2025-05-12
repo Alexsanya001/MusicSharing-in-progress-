@@ -1,5 +1,7 @@
 package com.example.musicsharing.services;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 import org.springframework.scheduling.annotation.Async;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -18,11 +20,12 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
+@FieldDefaults(level = AccessLevel.PROTECTED, makeFinal = true)
 public abstract class AbstractS3StorageService implements ObjectStorageService {
-    protected final S3Client s3Client;
-    protected final String bucketName;
-    protected final String endpoint;
-    protected final String region;
+    S3Client s3Client;
+    String bucketName;
+    String endpoint;
+    String region;
 
     protected AbstractS3StorageService(String endpoint, String accessKey, String secretKey, String bucketName, String region) {
         this.bucketName = bucketName;

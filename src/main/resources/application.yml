@@ -56,9 +56,14 @@ jwt:
     short: ${JWT_SHORT_EXP_TIME}
 
 cache:
-  type: caffeine # caffeine | redis | both | no-cache
-  ttl: ${JWT_EXP_TIME} # Duration
-  max-size: 100000 # Used for caffeine only
+  redis:
+    enabled: true
+    ttl: 30m
+
+  caffeine:
+    enabled: false
+    ttl: 30m
+    max-size: 100_000
 
 domain: ${DOMAIN_NAME}
 admin.email: ${ADMIN_EMAIL}

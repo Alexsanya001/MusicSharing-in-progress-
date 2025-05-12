@@ -7,7 +7,9 @@ import com.example.musicsharing.security.ResponseWrapper;
 import com.example.musicsharing.security.filters.AttemptsLimitFilter;
 import com.example.musicsharing.security.filters.CustomUsernamePasswordAuthenticationFilter;
 import com.example.musicsharing.security.filters.JWTRequestFilter;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,12 +30,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 @EnableMethodSecurity(securedEnabled = true)
 @EnableWebSecurity(debug = true)
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class SecurityConfig {
 
-    private final JWTRequestFilter jwtRequestFilter;
-    private final AttemptsLimitFilter attemptsLimitFilter;
-    private final CustomAuthenticationFailureHandler authFailureHandler;
-    private final CustomAuthenticationSuccessHandler authSuccessHandler;
+    JWTRequestFilter jwtRequestFilter;
+    AttemptsLimitFilter attemptsLimitFilter;
+    CustomAuthenticationFailureHandler authFailureHandler;
+    CustomAuthenticationSuccessHandler authSuccessHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,

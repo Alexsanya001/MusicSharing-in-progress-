@@ -2,25 +2,41 @@ package com.example.musicsharing.cache.conf;
 
 import com.example.musicsharing.cache.props.CacheProperties;
 import com.example.musicsharing.cache.providers.*;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+@Slf4j
 @Configuration
 @EnableConfigurationProperties(CacheProperties.class)
 public class CacheProviderConfig {
 
     @Bean
-    CacheProvider cacheProvider(CacheProperties props,
-                                RedisCacheProvider redis,
-                                CaffeineCacheProvider caffeine,
-                                CompositeCacheProvider composite,
-                                NoOpCacheProvider noOp) {
-        return switch (props.getType().toLowerCase()) {
-            case "redis" -> redis;
-            case "caffeine" -> caffeine;
-            case "both" -> composite;
-            default -> noOp;
-        };
+    CacheProvider cacheProvider(
+            ObjectProvider<CompositeCacheProvider> composite,
+            ObjectProvider<CaffeineCacheProvider> caffeine,
+            ObjectProvider<RedisCacheProvider> redis,
+            ObjectProvider<NoOpCacheProvider> noOp) {
+
+        CacheProvider provider = composite.getIfAvailable();
+        if (provider != null) {
+            return provider;
+        }
+        provider = caffeine.getIfAvailable();
+        if (provider != null) {
+            return provider;
+        }
+        provider = redis.getIfAvailable();
+        if (provider != null) {
+            return provider;
+        }
+        return fallBack(noOp);
+    }
+
+    private CacheProvider fallBack(ObjectProvider<NoOpCacheProvider> noOp) {
+        log.info("No cache provider configured. Falling back to no-op cache.");
+        return noOp.getIfAvailable();
     }
 }

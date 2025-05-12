@@ -1,5 +1,6 @@
 package com.example.musicsharing.services.impl;
 
+import com.example.musicsharing.cache.CacheName;
 import com.example.musicsharing.cache.CacheService;
 import com.example.musicsharing.models.dto.ForgotPasswordDto;
 import com.example.musicsharing.models.dto.RegisterDTO;
@@ -18,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -39,7 +39,6 @@ public class UserServiceImpl implements UserService {
     JWTUtil jwtUtil;
     PasswordEncoder passwordEncoder;
     MailService mailService;
-    StringRedisTemplate redisTemplate;
     CacheService cacheService;
 
 
@@ -71,8 +70,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserInfoDTO showUserInfo() {
-        User toShow = cacheService.get(getCurrentUser().getUsername(), User.class);
-        return userMapper.toUserInfoDTO(toShow);
+        return userMapper.toUserInfoDTO(getCurrentUser());
     }
 
 
@@ -90,7 +88,7 @@ public class UserServiceImpl implements UserService {
         if (user != null) {
             String token = jwtUtil.generateToken(String.valueOf(user.getId()), tokenShortExpTime);
             String redisKey = "password:reset:user:" + user.getId();
-            redisTemplate.opsForValue().set(redisKey, token, tokenShortExpTime);
+            cacheService.put(CacheName.LOGGED_USERS, redisKey, token, tokenShortExpTime);
             String message = String.format(RESTORE_PASSWORD_MESSAGE, domain, token);
             mailService.sendMail(email, "Restore password", message);
         }
@@ -101,9 +99,12 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void changePassword(RestorePasswordDto requestBody) {
         User user = getCurrentUser();
+
         User managedUser = userRepository.getReferenceById(user.getId());
         managedUser.setPassword(passwordEncoder.encode(requestBody.getNewPassword()));
         managedUser.setPasswordChangedAt(Instant.now());
+
+        cacheService.put(CacheName.LOGGED_USERS, managedUser.getUsername(), managedUser);
         userRepository.save(managedUser);
     }
 
@@ -118,6 +119,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserInfoDTO updateUserInfo(String username, UserInfoDTO updateUserDto) {
         User user = getCurrentUser();
+        cacheService.evict(CacheName.LOGGED_USERS, user.getUsername(), User.class);
 
         User managedUser = userRepository.getReferenceById(user.getId());
         managedUser.setUsername(updateUserDto.getUsername());
@@ -126,12 +128,13 @@ public class UserServiceImpl implements UserService {
         managedUser.setLastName(updateUserDto.getLastName());
         User updatedUser = userRepository.save(managedUser);
 
-        cacheService.put(updatedUser.getUsername(), updatedUser);
+        cacheService.put(CacheName.LOGGED_USERS, updatedUser.getUsername(), updatedUser);
         return userMapper.toUserInfoDTO(updatedUser);
     }
 
     private User getCurrentUser() {
         return SecurityUtils.getCurrentUser().orElseThrow(
-                () -> new AuthenticationException("User not authenticated") {});
+                () -> new AuthenticationException("User not authenticated") {
+                });
     }
 }

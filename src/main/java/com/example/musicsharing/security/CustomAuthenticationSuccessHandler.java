@@ -1,5 +1,6 @@
 package com.example.musicsharing.security;
 
+import com.example.musicsharing.cache.CacheName;
 import com.example.musicsharing.cache.CacheService;
 import com.example.musicsharing.util.JWTUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,7 +41,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         String token = generateToken(userDetails);
         ResponseWrapper.generateAuthSuccessResponse(response, token);
-        cacheService.put(userDetails.getUsername(), userDetails.user());
+        cacheService.put(CacheName.LOGGED_USERS, userDetails.getUsername(), userDetails.user());
         attemptsLimitService.discardLoginAttempts(
                 String.format(IDENTIFIER_PREFIX, userDetails.getUsername())
         );
