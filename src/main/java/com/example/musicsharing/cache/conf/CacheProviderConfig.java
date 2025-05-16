@@ -1,7 +1,11 @@
 package com.example.musicsharing.cache.conf;
 
 import com.example.musicsharing.cache.props.CacheProperties;
-import com.example.musicsharing.cache.providers.*;
+import com.example.musicsharing.cache.service.providers.CacheProvider;
+import com.example.musicsharing.cache.service.providers.CaffeineCacheProvider;
+import com.example.musicsharing.cache.service.providers.CompositeCacheProvider;
+import com.example.musicsharing.cache.service.providers.NoOpCacheProvider;
+import com.example.musicsharing.cache.service.providers.RedisCacheProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

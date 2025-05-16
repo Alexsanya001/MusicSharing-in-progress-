@@ -1,4 +1,4 @@
-package com.example.musicsharing.cache;
+package com.example.musicsharing.cache.exceptions;
 
 public class CacheException extends RuntimeException {
     public CacheException(String message) {

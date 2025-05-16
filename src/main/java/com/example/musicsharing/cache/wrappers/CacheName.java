@@ -1,4 +1,4 @@
-package com.example.musicsharing.cache;
+package com.example.musicsharing.cache.wrappers;
 
 public enum CacheName {
     LOGGED_USERS,

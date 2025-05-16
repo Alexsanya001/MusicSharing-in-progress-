@@ -1,9 +1,7 @@
 package com.example.musicsharing.security;
 
-import com.example.musicsharing.cache.CacheService;
 import com.example.musicsharing.models.dto.ErrorDetail;
 import com.example.musicsharing.models.dto.LoginDTO;
-import com.example.musicsharing.models.entities.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
@@ -20,6 +18,7 @@ import org.springframework.stereotype.Component;
 public class CustomAuthenticationFailureHandler implements AuthenticationFailureHandler {
 
     AttemptsLimitService attemptsLimitService;
+    ResponseWrapper responseWrapper;
 
     static String IDENTIFIER_PREFIX = "Username: %s";
     static String FAILURE_MESSAGE = "Bad credentials";
@@ -30,7 +29,7 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
                                         AuthenticationException exception) {
         catchFailureAttempt(request);
         ErrorDetail errorDetail = new ErrorDetail("authentication", FAILURE_MESSAGE);
-        ResponseWrapper.generateAuthFailureResponse(response, errorDetail);
+        responseWrapper.generateAuthFailureResponse(response, errorDetail);
     }
 
 

@@ -1,8 +1,9 @@
 package com.example.musicsharing.security;
 
-import com.example.musicsharing.cache.CacheName;
-import com.example.musicsharing.cache.CacheService;
+import com.example.musicsharing.cache.wrappers.CacheName;
+import com.example.musicsharing.cache.service.CacheService;
 import com.example.musicsharing.util.JWTUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
@@ -28,6 +29,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     JWTUtil jwtUtil;
     AttemptsLimitService attemptsLimitService;
     CacheService cacheService;
+    ResponseWrapper responseWrapper;
 
     @Value("${jwt.exp-time.long}")
     @NonFinal
@@ -40,8 +42,13 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         String token = generateToken(userDetails);
-        ResponseWrapper.generateAuthSuccessResponse(response, token);
-        cacheService.put(CacheName.LOGGED_USERS, userDetails.getUsername(), userDetails.user());
+        responseWrapper.generateAuthSuccessResponse(response, token);
+
+        userDetails.user().setPassword(null);
+
+        cacheService.put(CacheName.LOGGED_USERS, userDetails.getUsername(),
+                userDetails.user(), new TypeReference<>() {});
+
         attemptsLimitService.discardLoginAttempts(
                 String.format(IDENTIFIER_PREFIX, userDetails.getUsername())
         );

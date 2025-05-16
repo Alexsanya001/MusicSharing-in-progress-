@@ -26,6 +26,7 @@ public record CustomUserDetails(User user) implements UserDetails, Principal {
         return user.getUsername();
     }
 
+    @Override
     public String getName() {
         return getUsername();
     }

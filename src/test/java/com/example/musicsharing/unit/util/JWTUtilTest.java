@@ -1,5 +1,6 @@
-package com.example.musicsharing.util;
+package com.example.musicsharing.unit.util;
 
+import com.example.musicsharing.util.JWTUtil;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,6 +1,6 @@
 package com.example.musicsharing.security.filters;
 
-import com.example.musicsharing.cache.CacheService;
+import com.example.musicsharing.cache.service.CacheService;
 import com.example.musicsharing.repositories.UserRepository;
 import com.example.musicsharing.security.AttemptsLimitService;
 import com.example.musicsharing.util.JWTUtil;

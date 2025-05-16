@@ -40,6 +40,8 @@ class AttemptsLimitFilterTest {
     HttpServletResponse response;
     @Mock
     FilterChain filterChain;
+    @Mock
+    ResponseWrapper responseWrapper;
 
     @InjectMocks
     private AttemptsLimitFilter attemptsLimitFilter;
@@ -60,21 +62,18 @@ class AttemptsLimitFilterTest {
         when(limitService.isNotAllowed("Username: " + loginDTO.getUsername()))
                 .thenReturn(true);
 
-        try (var mockedStatic = mockStatic(ResponseWrapper.class)) {
 
-            attemptsLimitFilter.doFilter(request, response, filterChain);
+        attemptsLimitFilter.doFilter(request, response, filterChain);
 
-            verify(limitService).prepareSuspiciousAttempt(any(), eq("Username: " + loginDTO.getUsername()));
+        verify(limitService).prepareSuspiciousAttempt(any(), eq("Username: " + loginDTO.getUsername()));
 
-            ArgumentCaptor<ErrorDetail> captor = ArgumentCaptor.forClass(ErrorDetail.class);
-            mockedStatic.verify(() ->
-                    ResponseWrapper.generateAuthFailureResponse(eq(response), captor.capture()));
-            ErrorDetail errorDetail = captor.getValue();
+        ArgumentCaptor<ErrorDetail> captor = ArgumentCaptor.forClass(ErrorDetail.class);
+        verify(responseWrapper).generateAuthFailureResponse(eq(response), captor.capture());
+        ErrorDetail errorDetail = captor.getValue();
 
-            assertEquals("authentication", errorDetail.getField());
-            assertEquals("Too many attempts", errorDetail.getMessage());
-            verifyNoInteractions(filterChain);
-        }
+        assertEquals("authentication", errorDetail.getField());
+        assertEquals("Too many attempts", errorDetail.getMessage());
+        verifyNoInteractions(filterChain);
     }
 
 

@@ -1,4 +1,4 @@
-package com.example.musicsharing.exceptions;
+package com.example.musicsharing.unit.exceptions;
 
 import com.example.musicsharing.models.dto.ApiResponse;
 import com.example.musicsharing.models.dto.ErrorDetail;

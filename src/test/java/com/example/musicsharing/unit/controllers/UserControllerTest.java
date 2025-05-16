@@ -1,5 +1,6 @@
-package com.example.musicsharing.controllers;
+package com.example.musicsharing.unit.controllers;
 
+import com.example.musicsharing.controllers.UserController;
 import com.example.musicsharing.models.dto.ApiResponse;
 import com.example.musicsharing.models.dto.UserInfoDTO;
 import com.example.musicsharing.repositories.UserRepository;

@@ -1,4 +1,4 @@
-package com.example.musicsharing.services;
+package com.example.musicsharing.unit.services;
 
 import com.example.musicsharing.models.dto.ForgotPasswordDto;
 import com.example.musicsharing.models.dto.RegisterDTO;
@@ -8,6 +8,8 @@ import com.example.musicsharing.models.entities.Role;
 import com.example.musicsharing.models.entities.User;
 import com.example.musicsharing.models.mappers.UserMapper;
 import com.example.musicsharing.repositories.UserRepository;
+import com.example.musicsharing.services.MailService;
+import com.example.musicsharing.services.UserService;
 import com.example.musicsharing.services.impl.UserServiceImpl;
 import com.example.musicsharing.testsecurity.WithCustomUser;
 import com.example.musicsharing.testsecurity.WithCustomUserSecurityContextFactory;

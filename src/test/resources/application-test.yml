@@ -1,0 +1,26 @@
+spring:
+  mail:
+    host: smtp.mail.host
+    port: 1234
+    properties:
+      sender:
+        test@email.com
+
+jwt:
+  secret-key: testValueTestValueTestValueTestValue
+  exp-time:
+    long: 5m
+    short: 1m
+
+domain: localhost:8080
+admin.email: test@email.com
+
+cache:
+  redis:
+    enabled: true
+    ttl: 1m
+
+  caffeine:
+    enabled: true
+    ttl: 1m
+    max-size: 100_000

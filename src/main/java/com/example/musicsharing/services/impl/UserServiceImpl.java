@@ -1,7 +1,7 @@
 package com.example.musicsharing.services.impl;
 
-import com.example.musicsharing.cache.CacheName;
-import com.example.musicsharing.cache.CacheService;
+import com.example.musicsharing.cache.wrappers.CacheName;
+import com.example.musicsharing.cache.service.CacheService;
 import com.example.musicsharing.models.dto.ForgotPasswordDto;
 import com.example.musicsharing.models.dto.RegisterDTO;
 import com.example.musicsharing.models.dto.RestorePasswordDto;
@@ -14,6 +14,7 @@ import com.example.musicsharing.services.MailService;
 import com.example.musicsharing.services.UserService;
 import com.example.musicsharing.util.JWTUtil;
 import com.example.musicsharing.util.SecurityUtils;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -88,7 +89,8 @@ public class UserServiceImpl implements UserService {
         if (user != null) {
             String token = jwtUtil.generateToken(String.valueOf(user.getId()), tokenShortExpTime);
             String redisKey = "password:reset:user:" + user.getId();
-            cacheService.put(CacheName.LOGGED_USERS, redisKey, token, tokenShortExpTime);
+            cacheService.put(CacheName.LOGGED_USERS, redisKey, token, tokenShortExpTime, new TypeReference<>() {
+            });
             String message = String.format(RESTORE_PASSWORD_MESSAGE, domain, token);
             mailService.sendMail(email, "Restore password", message);
         }
@@ -104,7 +106,8 @@ public class UserServiceImpl implements UserService {
         managedUser.setPassword(passwordEncoder.encode(requestBody.getNewPassword()));
         managedUser.setPasswordChangedAt(Instant.now());
 
-        cacheService.put(CacheName.LOGGED_USERS, managedUser.getUsername(), managedUser);
+        cacheService.put(CacheName.LOGGED_USERS, managedUser.getUsername(), managedUser, new TypeReference<User>() {
+        });
         userRepository.save(managedUser);
     }
 
@@ -119,7 +122,8 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserInfoDTO updateUserInfo(String username, UserInfoDTO updateUserDto) {
         User user = getCurrentUser();
-        cacheService.evict(CacheName.LOGGED_USERS, user.getUsername(), User.class);
+        cacheService.evict(CacheName.LOGGED_USERS, user.getUsername(), new TypeReference<User>() {
+        });
 
         User managedUser = userRepository.getReferenceById(user.getId());
         managedUser.setUsername(updateUserDto.getUsername());
@@ -128,13 +132,15 @@ public class UserServiceImpl implements UserService {
         managedUser.setLastName(updateUserDto.getLastName());
         User updatedUser = userRepository.save(managedUser);
 
-        cacheService.put(CacheName.LOGGED_USERS, updatedUser.getUsername(), updatedUser);
+        cacheService.put(CacheName.LOGGED_USERS, updatedUser.getUsername(), updatedUser, new TypeReference<User>() {
+        });
         return userMapper.toUserInfoDTO(updatedUser);
     }
 
     private User getCurrentUser() {
         return SecurityUtils.getCurrentUser().orElseThrow(
                 () -> new AuthenticationException("User not authenticated") {
-                });
+                }
+        );
     }
 }

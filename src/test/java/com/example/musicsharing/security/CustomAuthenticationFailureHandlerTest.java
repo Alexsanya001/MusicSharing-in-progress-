@@ -12,9 +12,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.AuthenticationException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -29,6 +28,8 @@ class CustomAuthenticationFailureHandlerTest {
     private AuthenticationException exception;
     @Mock
     private AttemptsLimitService limitService;
+    @Mock
+    private ResponseWrapper responseWrapper;
 
     @InjectMocks
     private CustomAuthenticationFailureHandler failureHandler;
@@ -41,18 +42,14 @@ class CustomAuthenticationFailureHandlerTest {
                 .build();
         when(request.getAttribute("loginData")).thenReturn(loginDTO);
 
-        try(var mockedStatic = mockStatic(ResponseWrapper.class)){
+        failureHandler.onAuthenticationFailure(request, response, exception);
 
-            failureHandler.onAuthenticationFailure(request, response, exception);
+        ArgumentCaptor<ErrorDetail> captor = ArgumentCaptor.forClass(ErrorDetail.class);
+        verify(responseWrapper).generateAuthFailureResponse(eq(response), captor.capture());
+        ErrorDetail errorDetail = captor.getValue();
 
-            ArgumentCaptor<ErrorDetail> captor = ArgumentCaptor.forClass(ErrorDetail.class);
-            mockedStatic.verify(() ->
-                    ResponseWrapper.generateAuthFailureResponse(eq(response), captor.capture()));
-            ErrorDetail errorDetail = captor.getValue();
-
-            assertEquals("authentication", errorDetail.getField());
-            assertEquals("Bad credentials", errorDetail.getMessage());
-            verify(limitService).incrementLoginAttempts("Username: username");
-        }
+        assertEquals("authentication", errorDetail.getField());
+        assertEquals("Bad credentials", errorDetail.getMessage());
+        verify(limitService).incrementLoginAttempts("Username: username");
     }
 }

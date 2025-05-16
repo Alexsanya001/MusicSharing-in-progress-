@@ -37,6 +37,7 @@ public class SecurityConfig {
     AttemptsLimitFilter attemptsLimitFilter;
     CustomAuthenticationFailureHandler authFailureHandler;
     CustomAuthenticationSuccessHandler authSuccessHandler;
+    ResponseWrapper responseWrapper;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
@@ -89,7 +90,7 @@ public class SecurityConfig {
     public AuthenticationEntryPoint authenticationEntryPoint() {
         return (request, response, authException) -> {
             ErrorDetail error = new ErrorDetail("authorization", "Unauthorized access");
-            ResponseWrapper.generateAuthFailureResponse(response, error);
+            responseWrapper.generateAuthFailureResponse(response, error);
         };
     }
 

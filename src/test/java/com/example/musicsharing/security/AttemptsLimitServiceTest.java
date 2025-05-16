@@ -1,6 +1,5 @@
 package com.example.musicsharing.security;
 
-import com.example.musicsharing.services.MailService;
 import com.example.musicsharing.util.RequestDataExtractor;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,7 +11,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Duration;
 
@@ -51,7 +49,7 @@ class AttemptsLimitServiceTest {
     public void setUp() {
         MockitoAnnotations.openMocks(this);
         lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        attemptsLimitService = new AttemptsLimitService(redisTemplate, dataExtractor, eventPublisher);
+        attemptsLimitService = new AttemptsLimitService(redisTemplate, eventPublisher);
     }
 
 

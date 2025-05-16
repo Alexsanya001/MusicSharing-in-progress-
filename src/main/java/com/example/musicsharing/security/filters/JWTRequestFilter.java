@@ -1,6 +1,7 @@
 package com.example.musicsharing.security.filters;
 
-import com.example.musicsharing.cache.CacheService;
+import com.example.musicsharing.cache.wrappers.CacheName;
+import com.example.musicsharing.cache.service.CacheService;
 import com.example.musicsharing.models.dto.ErrorDetail;
 import com.example.musicsharing.models.entities.User;
 import com.example.musicsharing.repositories.UserRepository;
@@ -9,6 +10,7 @@ import com.example.musicsharing.security.CustomUserDetails;
 import com.example.musicsharing.security.ResponseWrapper;
 import com.example.musicsharing.util.JWTUtil;
 import com.example.musicsharing.util.RequestDataExtractor;
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -48,6 +50,7 @@ public class JWTRequestFilter extends OncePerRequestFilter {
     StringRedisTemplate redisTemplate;
     RequestDataExtractor requestDataExtractor;
     CacheService cacheService;
+    ResponseWrapper responseWrapper;
 
     static String JWT_EXPIRED_MESSAGE = "Token is expired.";
     static String JWT_INVALID_MESSAGE = "Token is invalid or already used.";
@@ -79,7 +82,7 @@ public class JWTRequestFilter extends OncePerRequestFilter {
         String subject = jwtUtil.extractClaim("sub", jwtToken);
         Long userId;
         try {
-             userId = Long.parseLong(subject);
+            userId = Long.parseLong(subject);
         } catch (NumberFormatException e) {
             throw new MalformedJwtException("Invalid JWT subject format");
         }
@@ -102,10 +105,9 @@ public class JWTRequestFilter extends OncePerRequestFilter {
 
     private void doRegularFilter(String jwtToken) {
         String username = jwtUtil.extractClaim("username", jwtToken);
-        User user = cacheService.get(username, User.class);
-        if (user == null) {
-            throw new MalformedJwtException(JWT_INVALID_MESSAGE);
-        }
+        User user = cacheService.get(CacheName.LOGGED_USERS, username, new TypeReference<User>() {
+                })
+                .orElseThrow(() -> new MalformedJwtException(JWT_INVALID_MESSAGE));
 
         validateTokenIssuedAt(jwtToken, user);
 
@@ -118,12 +120,12 @@ public class JWTRequestFilter extends OncePerRequestFilter {
     private void validateTokenIssuedAt(String jwtToken, User user) {
         Instant passwordChangedAt = user.getPasswordChangedAt();
         Instant tokenIssuedAt = jwtUtil.getIssuedAt(jwtToken);
-        if (tokenIssuedAt.isBefore(passwordChangedAt)){
+        if (tokenIssuedAt.isBefore(passwordChangedAt)) {
             throw new ExpiredJwtException(null, null, "Password changed after token issued");
         }
     }
 
-    private void authenticateUser(User user){
+    private void authenticateUser(User user) {
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                 new CustomUserDetails(user),
                 null,
@@ -140,7 +142,7 @@ public class JWTRequestFilter extends OncePerRequestFilter {
         } else {
             errorDetail.setMessage(JWT_INVALID_MESSAGE);
         }
-        ResponseWrapper.generateAuthFailureResponse(response, errorDetail);
+        responseWrapper.generateAuthFailureResponse(response, errorDetail);
     }
 
     private void catchFailureAttempt(HttpServletRequest request) {

@@ -1,5 +1,6 @@
-package com.example.musicsharing.controllers;
+package com.example.musicsharing.unit.controllers;
 
+import com.example.musicsharing.controllers.AuthController;
 import com.example.musicsharing.models.dto.*;
 import com.example.musicsharing.models.entities.User;
 import com.example.musicsharing.repositories.UserRepository;
@@ -56,6 +57,11 @@ class AuthControllerTest {
     private String uniqueUsernameMessage;
     @Value("${email.unique.message}")
     private String uniqueEmailMessage;
+
+    static String PASSWORD_RECOVERY_MESSAGE =
+            "Instructions for password recovering were sent to %s if it is registered in the system.";
+    static String CHANGE_PASSWORD_SUCCESS_MESSAGE =
+            "Password successfully changed. Please sign in with new password.";
 
 
     @Test
@@ -149,7 +155,7 @@ class AuthControllerTest {
     void sendRecoveryLink_shouldReturnApiResponseWithMessage() throws Exception {
         ForgotPasswordDto forgotPasswordDto = ForgotPasswordDto.builder().email("test@email.com").build();
         String requestBody = objectMapper.writeValueAsString(forgotPasswordDto);
-        String message = String.format(AuthController.PASSWORD_RECOVERY_MESSAGE,
+        String message = String.format(PASSWORD_RECOVERY_MESSAGE,
                 forgotPasswordDto.getEmail());
 
         ForgotPasswordResponse forgotPasswordResponse = ForgotPasswordResponse
@@ -202,7 +208,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").value(AuthController.CHANGE_PASSWORD_SUCCESS_MESSAGE));
+                .andExpect(jsonPath("$.data").value(CHANGE_PASSWORD_SUCCESS_MESSAGE));
 
         verify(userService).changePassword(any(RestorePasswordDto.class));
     }

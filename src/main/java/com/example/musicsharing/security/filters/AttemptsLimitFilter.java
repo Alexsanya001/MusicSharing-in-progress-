@@ -27,6 +27,7 @@ public class AttemptsLimitFilter implements Filter {
 
     AttemptsLimitService attemptsLimitService;
     RequestDataExtractor requestDataExtractor;
+    ResponseWrapper responseWrapper;
 
 
     @Override
@@ -62,7 +63,7 @@ public class AttemptsLimitFilter implements Filter {
                 if (attemptsLimitService.isNotAllowed(identifier)) {
                     attemptsLimitService.prepareSuspiciousAttempt(requestWrapper, identifier);
                     ErrorDetail errorDetail = new ErrorDetail("authentication", "Too many attempts");
-                    ResponseWrapper.generateAuthFailureResponse((HttpServletResponse) response, errorDetail);
+                    responseWrapper.generateAuthFailureResponse((HttpServletResponse) response, errorDetail);
                     return;
                 }
             }

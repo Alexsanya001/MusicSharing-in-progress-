@@ -61,7 +61,7 @@ cache:
     ttl: 30m
 
   caffeine:
-    enabled: false
+    enabled: true
     ttl: 30m
     max-size: 100_000
 
