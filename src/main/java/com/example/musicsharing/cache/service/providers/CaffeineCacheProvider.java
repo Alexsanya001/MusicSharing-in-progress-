@@ -1,5 +1,6 @@
 package com.example.musicsharing.cache.service.providers;
 
+import com.example.musicsharing.cache.service.updater.EntityIndex;
 import com.example.musicsharing.cache.wrappers.CacheEntry;
 import com.example.musicsharing.cache.wrappers.CacheName;
 import com.example.musicsharing.cache.service.CacheRegistry;
@@ -28,6 +29,7 @@ public class CaffeineCacheProvider implements CacheProvider {
 
     CacheProperties props;
     CacheRegistry cacheRegistry;
+    EntityIndex index;
 
     @PostConstruct
     private void validateCacheProperties() {
@@ -59,6 +61,7 @@ public class CaffeineCacheProvider implements CacheProvider {
         Cache<Object, TimedValue<?>> cache = cacheRegistry.computeIfAbsent(cacheEntry);
 
         cache.put(key, timed);
+        index.register(cacheEntry, key, value);
     }
 
 
