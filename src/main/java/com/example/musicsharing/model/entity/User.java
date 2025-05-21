@@ -1,5 +1,6 @@
 package com.example.musicsharing.models.entities;
 
+import com.example.musicsharing.cache.annotations.Tracked;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,6 +26,7 @@ import lombok.ToString;
 import java.time.Instant;
 import java.util.Set;
 
+@Tracked
 @Entity
 @Table(name = "users")
 @Getter
